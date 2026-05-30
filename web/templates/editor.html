@@ -1,0 +1,159 @@
+{{template "layout" .}}
+
+{{define "title"}}Edit: {{.Title}}{{end}}
+
+{{define "content"}}
+<div hx-history="false" class="w-full">
+<!-- Editor Header & Actions -->
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6 select-none border-b border-gray-100 pb-5">
+    <div class="w-full md:w-2/3">
+        <div class="flex items-center gap-2">
+            <span class="text-3xl font-extrabold text-slate-400 select-none">Edit:</span>
+            <input type="text" id="document-title-input" value="{{.Title}}" 
+                   data-orig-title="{{.Title}}" data-doc-id="{{.DocID}}"
+                   class="text-3xl font-extrabold font-serif text-gray-900 leading-tight tracking-tight border-b border-transparent hover:border-slate-200 focus:border-blue-500 focus:outline-none focus:ring-0 bg-transparent w-full transition duration-150 py-1"
+                   placeholder="Enter document title...">
+        </div>
+        <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs font-semibold text-slate-400 select-none uppercase tracking-wider shrink-0">Description:</span>
+            <input type="text" id="document-subtitle-input" value="{{.Subtitle}}"
+                   class="text-sm font-sans text-gray-600 border-b border-transparent hover:border-slate-200 focus:border-blue-500 focus:outline-none focus:ring-0 bg-transparent w-full transition duration-150 py-0.5"
+                   placeholder="Enter subtitle / short description...">
+        </div>
+        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-sans mt-2">
+            <span class="flex items-center gap-1 font-medium">✏️ Editor</span>
+            <span class="text-gray-300">•</span>
+            <span>Click the title above to rename this document.</span>
+        </div>
+    </div>
+
+    <!-- Actions toolbar -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 text-sm self-start font-sans shrink-0">
+        <a href="/wiki/{{.Title}}" hx-get="/wiki/{{.Title}}" hx-target="#wiki-content" hx-swap="innerHTML" hx-push-url="true" id="read-document-btn"
+           class="border border-gray-300 hover:bg-gray-50 active:scale-95 text-gray-700 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 flex items-center justify-center gap-1 shadow-sm active:translate-y-0.5 active:shadow-inner">
+            📖 Read article
+        </a>
+        <button type="button" id="save-document-btn" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold px-4 py-1.5 rounded-lg text-xs transition-all duration-150 flex items-center justify-center gap-1 shadow-md hover:shadow-lg active:translate-y-0.5 active:shadow-inner">
+            💾 Save
+        </button>
+        <div id="save-result" class="hidden"></div>
+    </div>
+</div>
+
+{{if and .IsLocked (ne .SessionUserRole "admin")}}
+<!-- Lock guard: block edits for locked pages (fallback if server redirect is bypassed) -->
+<div class="flex flex-col items-center justify-center py-16 space-y-4">
+    <div class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl text-sm font-medium shadow-sm">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <div>
+            <p class="font-semibold">🔒 This article is locked</p>
+            <p class="text-xs mt-1 text-red-600/80">Only administrators can edit locked pages.</p>
+        </div>
+    </div>
+    <a href="/wiki/{{.Title}}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-6 rounded shadow-sm transition">
+        ← Back to article
+    </a>
+</div>
+{{else}}
+<!-- Editor Form -->
+<form id="editor-form" hx-post="/editor/save" hx-target="#save-result" class="flex flex-col space-y-4">
+    <input type="hidden" name="title" value="{{.Title}}">
+    <input type="hidden" name="subtitle" id="subtitle-hidden-input" value="{{.Subtitle}}">
+    <!-- Optimistic locking base revision -->
+    <input type="hidden" name="base_revision_id" id="base_revision_id" value="{{.LatestRevisionID}}">
+    
+    <!-- Tags selection area -->
+    <div class="bg-slate-50/50 p-4 border border-slate-200 rounded-lg flex flex-col gap-2 shadow-sm font-sans" id="editor-tags-area">
+        <label class="block font-semibold text-gray-700 text-xs uppercase tracking-wider select-none">Tags</label>
+        
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Selected tags container -->
+            <div id="selected-tags-container" class="flex flex-wrap gap-1.5">
+                <!-- Pills rendered dynamically via JS -->
+            </div>
+
+            <!-- Dropdown selector for tag pool -->
+            <div class="relative inline-block text-left ml-1" id="tag-selector-wrapper">
+                <button type="button" id="add-tag-btn" class="border border-slate-300 hover:border-slate-400 active:scale-95 bg-white hover:bg-slate-50 text-slate-600 px-3 py-1 rounded text-xs font-semibold shadow-sm transition-all duration-150 flex items-center gap-1 active:translate-y-0.5 active:shadow-inner">
+                    ➕ Add from tag pool
+                </button>
+                <!-- Dropdown list -->
+                <div id="tag-pool-dropdown" class="hidden absolute left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 max-h-48 overflow-y-auto">
+                    <!-- Options populated via JS -->
+                </div>
+            </div>
+
+            <!-- Admin-only tag creation -->
+            {{if eq .SessionUserRole "admin"}}
+            <div class="flex items-center gap-1 border-l border-slate-200 pl-3 ml-2">
+                <input type="text" id="new-tag-name" placeholder="New tag..." class="border border-slate-300 rounded px-2.5 py-1 text-xs focus:outline-none focus:border-blue-500 w-24 transition">
+                <button type="button" id="create-tag-btn" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-2.5 py-1 rounded text-xs font-semibold shadow-sm transition-all duration-150 active:translate-y-0.5 active:shadow-inner">
+                    Create tag
+                </button>
+            </div>
+            {{end}}
+        </div>
+        <p class="text-[10px] text-gray-400 select-none">Writers may only add tags from the pool. Admins can create new tags.</p>
+        
+        <!-- Hidden input to submit tags -->
+        <input type="hidden" name="tags" id="tags-hidden-input" value="{{.Tags}}">
+    </div>
+
+    <div>
+        <!-- Sticky editor toolbar (focus mode) -->
+        <div id="editor-sticky-toolbar" class="flex justify-between items-center mb-2 bg-slate-50 border border-slate-200 rounded-lg p-2 font-sans transition-all duration-150">
+            <span class="font-semibold text-gray-700 text-sm pl-1 select-none" id="editor-box-label">Article content (Markdown)</span>
+            
+            <div class="flex items-center gap-2">
+                <input type="file" id="imageUpload" accept="image/png, image/jpeg" class="hidden">
+                <button type="button" id="focus-insert-image-btn" class="hidden bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 py-1.5 px-3 rounded-lg text-xs font-semibold shadow-sm transition-all duration-150 active:translate-y-0.5 active:shadow-inner" onclick="document.getElementById('imageUpload').click()">
+                    🖼️ Insert image
+                </button>
+                
+                <button type="button" id="toggle-focus-mode" class="border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 active:scale-95 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 flex items-center justify-center gap-1 shadow-sm active:translate-y-0.5 active:shadow-inner">
+                    ✨ Edit content
+                </button>
+            </div>
+        </div>
+
+        <textarea name="content" id="content" required
+                  class="w-full border border-gray-300 rounded p-3 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm shadow-inner resize-none overflow-hidden min-h-[400px]">{{.Content}}</textarea>
+    </div>
+
+    <!-- Edit summary (filled by save modal) -->
+    <input type="hidden" name="comment" id="comment" value="">
+</form>
+
+
+</div>
+{{end}}
+
+
+
+<!-- Save confirmation modal -->
+<div id="save-confirm-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6 transform scale-95 opacity-0 transition-all duration-150 ease-out" id="modal-box">
+        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-1.5 select-none font-sans">
+            💾 Confirm save
+        </h3>
+        <p class="text-xs text-gray-500 mt-1 select-none font-sans">Save your changes? Please summarize what you edited for the revision history.</p>
+        
+        <div class="mt-4 font-sans">
+            <label for="modal-comment" class="block text-xs font-semibold text-gray-600 mb-1">Edit summary (required)</label>
+            <input type="text" id="modal-comment" placeholder="e.g. Fix typo, add tags..." required
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+        </div>
+        
+        <div class="mt-6 flex items-center justify-end gap-2 font-sans">
+            <button type="button" id="modal-cancel-btn" class="px-4 py-2 text-xs font-semibold border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition">
+                Cancel
+            </button>
+            <button type="button" id="modal-confirm-btn" class="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm">
+                Confirm &amp; save
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/editor.js?v=1.0.2" defer></script>
+{{end}}

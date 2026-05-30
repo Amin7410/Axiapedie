@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  wiki-server:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+      - ./uploads:/uploads
+    environment:
+      - DB_PATH=/data/wiki.db
+      - REPLICA_URL=s3://my-wiki-bucket.ca-central-1.linodeobjects.com/db
+      - LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}
+      - LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}
+    restart: unless-stopped

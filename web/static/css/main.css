@@ -1,0 +1,445 @@
+body {
+            font-family: 'Inter', sans-serif;
+        }
+        .wiki-content {
+            font-family: 'Inter', sans-serif;
+        }
+        .wiki-content h1, .wiki-content h2, .wiki-content h3, .wiki-content h4, .wiki-content h5, .wiki-content h6 {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom scrollbar for sidebar */
+        #wiki-sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        #wiki-sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #wiki-sidebar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+        #wiki-sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+        /* Custom scrollbar for explorer tree */
+        #explorer-tree::-webkit-scrollbar {
+            width: 3px;
+        }
+        #explorer-tree::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #explorer-tree::-webkit-scrollbar-thumb {
+            background-color: #e2e8f0;
+            border-radius: 5px;
+        }
+
+        /* Dark scrollbars */
+        body.theme-dark #wiki-sidebar::-webkit-scrollbar-thumb,
+        body.theme-dark #explorer-tree::-webkit-scrollbar-thumb {
+            background-color: var(--ax-dark-border);
+        }
+        body.theme-dark #wiki-sidebar::-webkit-scrollbar-thumb:hover,
+        body.theme-dark #explorer-tree::-webkit-scrollbar-thumb:hover {
+            background-color: var(--ax-dark-muted);
+        }
+        
+        /* Auto-responsive fluid images in wiki content */
+        .wiki-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1.5rem auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* 3D button animations */
+        button, .btn-3d {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        button:active, .btn-3d:active {
+            transform: scale(0.96) translateY(1px);
+            filter: brightness(0.92);
+        }
+
+/* ================================================
+   APPEARANCE SETTINGS — Text Size & Width
+   ================================================ */
+body.text-size-sm .wiki-content,
+body.text-size-sm .wiki-content p,
+body.text-size-sm .wiki-content li,
+body.text-size-sm .wiki-content table,
+body.text-size-sm .wiki-content pre,
+body.text-size-sm .wiki-content code {
+    font-size: 14px !important;
+}
+
+body.text-size-md .wiki-content,
+body.text-size-md .wiki-content p,
+body.text-size-md .wiki-content li,
+body.text-size-md .wiki-content table,
+body.text-size-md .wiki-content pre,
+body.text-size-md .wiki-content code {
+    font-size: 16.5px !important;
+}
+
+body.text-size-lg .wiki-content,
+body.text-size-lg .wiki-content p,
+body.text-size-lg .wiki-content li,
+body.text-size-lg .wiki-content table,
+body.text-size-lg .wiki-content pre,
+body.text-size-lg .wiki-content code {
+    font-size: 19.5px !important;
+}
+
+body.text-size-sm .wiki-content h1 { font-size: 1.875rem !important; }
+body.text-size-sm .wiki-content h2 { font-size: 1.5rem !important; }
+body.text-size-sm .wiki-content h3 { font-size: 1.25rem !important; }
+
+body.text-size-md .wiki-content h1 { font-size: 2.25rem !important; }
+body.text-size-md .wiki-content h2 { font-size: 1.875rem !important; }
+body.text-size-md .wiki-content h3 { font-size: 1.5rem !important; }
+
+body.text-size-lg .wiki-content h1 { font-size: 2.5rem !important; }
+body.text-size-lg .wiki-content h2 { font-size: 2.125rem !important; }
+body.text-size-lg .wiki-content h3 { font-size: 1.75rem !important; }
+
+/* Editor textarea font scaling */
+body.text-size-sm #content { font-size: 13px !important; }
+body.text-size-md #content { font-size: 15px !important; }
+body.text-size-lg #content { font-size: 18px !important; }
+
+body.content-width-wide main { max-width: 1600px !important; }
+
+/* ================================================
+   SETTINGS PANEL — Pill Toggle Radio
+   ================================================ */
+.setting-group {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 3px;
+}
+.setting-pill {
+    flex: 1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    text-align: center;
+    white-space: nowrap;
+}
+.setting-pill:hover:not(.active) {
+    color: #334155;
+    background: rgba(255,255,255,0.5);
+}
+.setting-pill.active {
+    background: white;
+    color: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    font-weight: 600;
+}
+
+/* ================================================
+   DARK THEME
+   ================================================ */
+
+/* --- Dark palette tokens (Wikipedia-like) --- */
+:root {
+    --ax-dark-bg: #101418;            /* page background */
+    --ax-dark-surface-1: #1d232a;     /* header/sidebar/content surfaces */
+    --ax-dark-surface-2: #20262e;     /* inputs/raised */
+    --ax-dark-surface-3: #2a3038;     /* hover/selected */
+    --ax-dark-border: #39424e;        /* separators */
+
+    --ax-dark-text: #f8f9fa;          /* primary text */
+    --ax-dark-text-2: #c8ccd1;        /* secondary text */
+    --ax-dark-muted: #a2a9b1;         /* muted/help text */
+
+    --ax-dark-link: #8ab4f8;          /* link */
+    --ax-dark-link-hover: #a9c7ff;
+    --ax-dark-focus: #8ab4f8;         /* focus ring */
+
+    --ax-dark-danger: #ff7b72;
+    --ax-dark-warning-bg: rgba(255, 192, 91, 0.12);
+    --ax-dark-info-bg: rgba(138, 180, 248, 0.12);
+}
+
+/* --- Core Surfaces --- */
+body.theme-dark {
+    background-color: var(--ax-dark-bg) !important;
+    color: var(--ax-dark-text) !important;
+    color-scheme: dark;
+}
+body.theme-dark #wiki-sidebar { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark header { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #sidebar-resizer { background-color: var(--ax-dark-border) !important; }
+body.theme-dark #sidebar-resizer:hover { background-color: var(--ax-dark-focus) !important; }
+body.theme-dark #wiki-content { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; color: var(--ax-dark-text) !important; }
+
+/* --- Sidebar --- */
+body.theme-dark #wiki-sidebar .text-blue-600 { color: var(--ax-dark-link) !important; }
+body.theme-dark #wiki-sidebar .text-gray-500 { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #wiki-sidebar .text-gray-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #wiki-sidebar .border-gray-200,
+body.theme-dark #wiki-sidebar .border-gray-100 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #wiki-sidebar button:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #wiki-sidebar::-webkit-scrollbar-thumb { background-color: var(--ax-dark-border); }
+body.theme-dark #wiki-sidebar::-webkit-scrollbar-thumb:hover { background-color: var(--ax-dark-muted); }
+
+/* --- Explorer Tree --- */
+body.theme-dark #explorer-tree { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #explorer-tree .group { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #explorer-tree .group:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #explorer-tree a:hover { color: var(--ax-dark-link) !important; }
+body.theme-dark #explorer-tree .text-gray-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #explorer-tree::-webkit-scrollbar-thumb { background-color: var(--ax-dark-border); }
+
+/* --- Header — Search, Toggle, Account --- */
+body.theme-dark #sidebar-toggle { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #sidebar-toggle:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #search-input { background-color: var(--ax-dark-surface-2) !important; color: var(--ax-dark-text) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #search-input::placeholder { color: var(--ax-dark-muted); }
+body.theme-dark #search-input:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #search-input:focus {
+    background-color: var(--ax-dark-surface-2) !important;
+    border-color: var(--ax-dark-focus) !important;
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 2px rgba(138,180,248,0.35) !important;
+}
+body.theme-dark #search-form .bg-white { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #search-form .border-slate-200 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #search-form .text-slate-400 { color: var(--ax-dark-muted) !important; }
+
+/* --- Search Suggestions --- */
+body.theme-dark #search-suggestions { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #search-suggestions .suggestion-item { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #search-suggestions .suggestion-item:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #search-suggestions .text-gray-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #search-suggestions .border-gray-100 { border-color: var(--ax-dark-border) !important; }
+
+/* --- Settings Gear & Panel --- */
+body.theme-dark #settings-btn { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #settings-btn:hover { background-color: var(--ax-dark-surface-3) !important; color: var(--ax-dark-text) !important; }
+body.theme-dark #settings-panel { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #settings-panel h4 { color: var(--ax-dark-text) !important; }
+body.theme-dark #settings-panel .text-gray-500 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #settings-panel .text-gray-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #settings-panel .border-gray-100 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark .setting-group { background: var(--ax-dark-surface-2); border: 1px solid var(--ax-dark-border); }
+body.theme-dark .setting-pill { color: var(--ax-dark-muted); }
+body.theme-dark .setting-pill:hover:not(.active) { color: var(--ax-dark-text-2); background: var(--ax-dark-surface-3); }
+body.theme-dark .setting-pill.active { background: var(--ax-dark-surface-3); color: var(--ax-dark-text); box-shadow: none; }
+
+/* --- Account Dropdown --- */
+body.theme-dark #account-dropdown-menu { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #account-dropdown-menu a { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #account-dropdown-menu a:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #account-dropdown-menu .border-gray-100 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #account-dropdown-menu .text-gray-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #account-dropdown-menu .text-gray-800 { color: var(--ax-dark-text) !important; }
+body.theme-dark #account-dropdown-menu .bg-blue-50 { background-color: var(--ax-dark-info-bg) !important; }
+body.theme-dark #account-dropdown-menu .text-blue-600 { color: var(--ax-dark-link) !important; }
+body.theme-dark #account-dropdown-menu .border-blue-100 { border-color: rgba(138,180,248,0.25) !important; }
+body.theme-dark #account-dropdown-menu .text-red-600 { color: var(--ax-dark-danger) !important; }
+body.theme-dark #account-dropdown-menu .text-red-600:hover { background-color: rgba(127,29,29,0.2) !important; }
+
+/* --- Wiki Content Typography (Dark) --- */
+body.theme-dark .wiki-content { color: var(--ax-dark-text-2) !important; }
+body.theme-dark .wiki-content h1, body.theme-dark .wiki-content h2, body.theme-dark .wiki-content h3,
+body.theme-dark .wiki-content h4, body.theme-dark .wiki-content h5, body.theme-dark .wiki-content h6 { color: var(--ax-dark-text) !important; }
+body.theme-dark .wiki-content a { color: var(--ax-dark-link) !important; }
+body.theme-dark .wiki-content a:hover { color: var(--ax-dark-link-hover) !important; }
+body.theme-dark .wiki-content pre, body.theme-dark .wiki-content code { background-color: var(--ax-dark-bg) !important; color: var(--ax-dark-text) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark .wiki-content blockquote { border-color: var(--ax-dark-border) !important; color: var(--ax-dark-muted) !important; }
+body.theme-dark .wiki-content img { box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; }
+body.theme-dark .wiki-content table th { background-color: var(--ax-dark-surface-2) !important; color: var(--ax-dark-text) !important; }
+body.theme-dark .wiki-content table td { border-color: var(--ax-dark-border) !important; }
+body.theme-dark .wiki-content hr { border-color: var(--ax-dark-border) !important; }
+
+/* --- Article & Editor Header Elements (Dark) --- */
+body.theme-dark #wiki-content .text-gray-900 { color: var(--ax-dark-text) !important; }
+body.theme-dark #wiki-content h1 { color: var(--ax-dark-text) !important; }
+body.theme-dark #wiki-content .text-gray-500 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #wiki-content .text-gray-700 { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #wiki-content .text-gray-300 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #wiki-content .border-gray-100 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #wiki-content .border-gray-200 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #wiki-content .border-gray-300 { border-color: var(--ax-dark-border) !important; color: var(--ax-dark-text-2) !important; }
+body.theme-dark #wiki-content .border-gray-300:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #wiki-content .bg-gray-50 { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .bg-slate-100 { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .text-slate-600 { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #wiki-content .text-slate-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #wiki-content .text-slate-800 { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #wiki-content .text-\[\#202122\] { color: var(--ax-dark-text-2) !important; }
+
+/* Tailwind utility overrides used in templates */
+body.theme-dark #wiki-content .bg-white { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .bg-white\/95 { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .bg-gray-50 { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .bg-slate-50 { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .bg-slate-50\/50 { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content .bg-blue-50\/70 { background-color: var(--ax-dark-info-bg) !important; }
+body.theme-dark #wiki-content .bg-indigo-50\/50 { background-color: rgba(138, 180, 248, 0.12) !important; }
+body.theme-dark #wiki-content .bg-red-50\/50 { background-color: rgba(255, 123, 114, 0.14) !important; }
+body.theme-dark #wiki-content .hover\:bg-gray-50:hover,
+body.theme-dark #wiki-content .hover\:bg-slate-50:hover,
+body.theme-dark #wiki-content .hover\:bg-slate-50\/50:hover,
+body.theme-dark #wiki-content .hover\:bg-blue-100:hover,
+body.theme-dark #wiki-content .hover\:bg-indigo-50:hover,
+body.theme-dark #wiki-content .hover\:bg-red-50:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #wiki-content .border-slate-300,
+body.theme-dark #wiki-content .border-gray-300,
+body.theme-dark #wiki-content .border-gray-200,
+body.theme-dark #wiki-content .border-indigo-200,
+body.theme-dark #wiki-content .border-red-200,
+body.theme-dark #wiki-content .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--ax-dark-border) !important;
+}
+body.theme-dark #wiki-content .text-gray-800,
+body.theme-dark #wiki-content .text-gray-700,
+body.theme-dark #wiki-content .text-gray-600 { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #wiki-content .text-gray-500,
+body.theme-dark #wiki-content .text-gray-400 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #wiki-content .text-indigo-700,
+body.theme-dark #wiki-content .text-blue-600 { color: var(--ax-dark-link) !important; }
+body.theme-dark #wiki-content .text-red-700,
+body.theme-dark #wiki-content .text-red-600 { color: var(--ax-dark-danger) !important; }
+body.theme-dark #wiki-content .shadow-sm,
+body.theme-dark #wiki-content .shadow-inner,
+body.theme-dark #wiki-content .shadow-lg,
+body.theme-dark #wiki-content .shadow-xl,
+body.theme-dark #wiki-content .shadow-2xl { box-shadow: none !important; }
+
+/* Lock banner */
+body.theme-dark #wiki-content .bg-amber-50 { background-color: var(--ax-dark-warning-bg) !important; }
+body.theme-dark #wiki-content .border-amber-200 { border-color: rgba(255, 192, 91, 0.25) !important; }
+body.theme-dark #wiki-content .text-amber-800 { color: #ffc05b !important; }
+
+/* Info box & Tags */
+body.theme-dark #wiki-content .bg-blue-50 { background-color: var(--ax-dark-info-bg) !important; }
+body.theme-dark #wiki-content .text-blue-600 { color: var(--ax-dark-link) !important; }
+body.theme-dark #wiki-content .border-blue-100 { border-color: rgba(138,180,248,0.25) !important; }
+body.theme-dark #wiki-content .border-blue-200 { border-color: rgba(138,180,248,0.25) !important; }
+body.theme-dark #wiki-content .border-blue-500 { border-color: var(--ax-dark-focus) !important; }
+
+/* --- Editor Specific (Dark) --- */
+body.theme-dark #editor-tags-area,
+body.theme-dark #editor-sticky-toolbar {
+    background-color: var(--ax-dark-surface-2) !important;
+    border-color: var(--ax-dark-border) !important;
+}
+body.theme-dark #add-tag-btn,
+body.theme-dark #focus-insert-image-btn,
+body.theme-dark #focus-exit-btn {
+    background-color: var(--ax-dark-surface-2) !important;
+    color: var(--ax-dark-text-2) !important;
+    border-color: var(--ax-dark-border) !important;
+}
+body.theme-dark #add-tag-btn:hover,
+body.theme-dark #focus-insert-image-btn:hover,
+body.theme-dark #focus-exit-btn:hover {
+    background-color: var(--ax-dark-surface-3) !important;
+    border-color: var(--ax-dark-focus) !important;
+}
+body.theme-dark #document-title-input { color: var(--ax-dark-text) !important; }
+body.theme-dark #document-title-input::placeholder { color: var(--ax-dark-muted); }
+body.theme-dark #document-title-input:hover { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #document-title-input:focus {
+    border-color: var(--ax-dark-focus) !important;
+    box-shadow: 0 0 0 2px rgba(138,180,248,0.35) !important;
+}
+body.theme-dark #wiki-content textarea,
+body.theme-dark #content { background-color: var(--ax-dark-bg) !important; color: var(--ax-dark-text) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #wiki-content .bg-slate-50 { background-color: var(--ax-dark-bg) !important; }
+body.theme-dark #wiki-content .border-slate-200 { border-color: var(--ax-dark-border) !important; }
+body.theme-dark #wiki-content .text-slate-500 { color: var(--ax-dark-muted) !important; }
+body.theme-dark #tag-pool-dropdown { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #tag-pool-dropdown button { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #tag-pool-dropdown button:hover { background-color: var(--ax-dark-surface-3) !important; }
+
+/* --- Bookmark/Search tables & lists in dark mode --- */
+body.theme-dark #wiki-content table { background-color: var(--ax-dark-surface-1) !important; }
+body.theme-dark #wiki-content thead { background-color: var(--ax-dark-surface-2) !important; }
+body.theme-dark #wiki-content tbody { background-color: var(--ax-dark-surface-1) !important; }
+body.theme-dark #wiki-content tr:hover { background-color: var(--ax-dark-surface-3) !important; }
+body.theme-dark #wiki-content .border-dashed { border-color: var(--ax-dark-border) !important; }
+
+/* --- Context Menu (Dark) --- */
+body.theme-dark #explorer-context-menu { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #explorer-context-menu button { color: var(--ax-dark-text-2) !important; }
+
+/* --- Custom Dialog Modal (Dark) --- */
+body.theme-dark #custom-dialog-modal { background-color: rgba(2,6,23,0.6) !important; }
+body.theme-dark #custom-dialog-box { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #custom-dialog-title { color: var(--ax-dark-text) !important; }
+body.theme-dark #custom-dialog-message { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #custom-dialog-input { background-color: var(--ax-dark-bg) !important; color: var(--ax-dark-text) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #custom-dialog-cancel-btn { border-color: var(--ax-dark-border) !important; color: var(--ax-dark-text-2) !important; }
+body.theme-dark #custom-dialog-cancel-btn:hover { background-color: var(--ax-dark-surface-3) !important; }
+
+/* --- Toast Notifications (Dark) --- */
+body.theme-dark #toast-container > div { background-color: var(--ax-dark-surface-1) !important; border: 1px solid var(--ax-dark-border) !important; }
+body.theme-dark #toast-container > div.bg-red-50\/90 {
+    background-color: rgba(255, 123, 114, 0.16) !important;
+    border-color: rgba(255, 123, 114, 0.35) !important;
+}
+body.theme-dark #toast-container > div.bg-amber-50\/90 {
+    background-color: rgba(255, 192, 91, 0.14) !important;
+    border-color: rgba(255, 192, 91, 0.28) !important;
+}
+body.theme-dark #toast-container > div.bg-emerald-50\/90 {
+    background-color: rgba(78, 201, 176, 0.14) !important;
+    border-color: rgba(78, 201, 176, 0.28) !important;
+}
+body.theme-dark #toast-container > div.text-red-900 { color: #ffd0cb !important; }
+body.theme-dark #toast-container > div.text-amber-900 { color: #ffe2aa !important; }
+body.theme-dark #toast-container > div.text-emerald-900 { color: #b7f0df !important; }
+
+/* --- Save Confirm Modal (Dark) --- */
+body.theme-dark #save-confirm-modal { background-color: rgba(2,6,23,0.6) !important; }
+body.theme-dark #modal-box { background-color: var(--ax-dark-surface-1) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #modal-box h3 { color: var(--ax-dark-text) !important; }
+body.theme-dark #modal-box p { color: var(--ax-dark-text-2) !important; }
+body.theme-dark #modal-comment { background-color: var(--ax-dark-bg) !important; color: var(--ax-dark-text) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark #modal-cancel-btn { border-color: var(--ax-dark-border) !important; color: var(--ax-dark-text-2) !important; }
+body.theme-dark #modal-cancel-btn:hover { background-color: var(--ax-dark-surface-3) !important; }
+
+/* --- Non-authenticated Login/Register Buttons (Dark) --- */
+body.theme-dark .bg-gray-100.border-gray-300 { background-color: var(--ax-dark-surface-2) !important; color: var(--ax-dark-text) !important; border-color: var(--ax-dark-border) !important; }
+body.theme-dark .bg-gray-100.border-gray-300:hover { background-color: var(--ax-dark-surface-3) !important; }
+
+/* --- Red Links (Non-existent pages) --- */
+.wiki-content .wiki-link-red {
+    color: #dd3333 !important;
+    font-weight: 500;
+}
+.wiki-content .wiki-link-red:hover {
+    color: #a30000 !important;
+    text-decoration: underline !important;
+}
+body.theme-dark .wiki-content .wiki-link-red {
+    color: #ff6b6b !important;
+}
+body.theme-dark .wiki-content .wiki-link-red:hover {
+    color: #ff8787 !important;
+}
+
+/* --- Drag & Drop Sorting Indicators --- */
+.drag-hover-before {
+    border-top: 2px solid #2563eb !important;
+    border-top-left-radius: 0px !important;
+    border-top-right-radius: 0px !important;
+}
+.drag-hover-after {
+    border-bottom: 2px solid #2563eb !important;
+    border-bottom-left-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}

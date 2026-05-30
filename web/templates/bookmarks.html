@@ -1,0 +1,86 @@
+{{template "layout" .}}
+
+{{define "title"}}Saved articles{{end}}
+
+{{define "content"}}
+<!-- Tabs bar (Wikipedia style) -->
+<div class="flex justify-between items-center border-b border-[#a2a9b1] mb-6 select-none">
+    <div class="flex space-x-1 -mb-[1px]">
+        <span class="border-x border-t border-[#a2a9b1] bg-white text-gray-800 px-4 py-2 text-sm font-semibold rounded-t cursor-default">
+            ⭐ Saved articles
+        </span>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="mb-6">
+    <h1 class="text-4xl font-normal font-serif text-gray-900 leading-tight">Saved articles</h1>
+    <p class="text-xs text-gray-500 italic mt-1">Articles you bookmarked for quick access.</p>
+    <hr class="mt-2.5 border-[#a2a9b1]">
+</div>
+
+<!-- Bookmarks table -->
+<div class="wiki-content prose prose-blue max-w-none text-[#202122] leading-relaxed text-[15px] space-y-4">
+    {{if .Bookmarks}}
+        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-semibold select-none">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Article</th>
+                        <th class="px-6 py-3 text-left">Type</th>
+                        <th class="px-6 py-3 text-left">Status</th>
+                        <th class="px-6 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white font-sans">
+                    {{range .Bookmarks}}
+                    <tr class="hover:bg-gray-50/50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="/wiki/{{.Title}}" hx-get="/wiki/{{.Title}}" hx-target="#wiki-content" hx-swap="innerHTML" hx-push-url="true"
+                               class="text-blue-600 hover:underline font-semibold text-sm">
+                                {{.Title}}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500 text-xs">
+                            {{if .IsFolder}}📁 Folder{{else}}📄 Article{{end}}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {{if .IsLocked}}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 select-none">
+                                🔒 Locked
+                            </span>
+                            {{else}}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-800 border border-green-200 select-none">
+                                🔓 Public
+                            </span>
+                            {{end}}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <div class="flex justify-end items-center gap-2">
+                                <a href="/wiki/{{.Title}}" hx-get="/wiki/{{.Title}}" hx-target="#wiki-content" hx-swap="innerHTML" hx-push-url="true"
+                                   class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-semibold transition">
+                                    Read
+                                </a>
+                                <button hx-post="/api/v1/bookmarks/toggle?document_id={{.ID}}" 
+                                        hx-target="closest tr" 
+                                        hx-swap="delete"
+                                        class="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded font-semibold transition" 
+                                        title="Remove bookmark">
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    {{else}}
+        <div class="bg-gray-50 border border-gray-200 p-8 rounded-lg text-center font-sans">
+            <span class="text-4xl">⭐</span>
+            <h3 class="mt-2 text-sm font-semibold text-gray-900">No saved articles yet</h3>
+            <p class="mt-1 text-xs text-gray-500">Use the Save button on any article to start bookmarking.</p>
+        </div>
+    {{end}}
+</div>
+{{end}}

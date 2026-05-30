@@ -1,0 +1,4 @@
+dbs:
+  - path: /data/wiki.db
+    replicas:
+      - url: ${REPLICA_URL}

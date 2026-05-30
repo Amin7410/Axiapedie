@@ -1,0 +1,9 @@
+.run/
+bin/
+data/
+uploads/
+*.db
+*.db-shm
+*.db-wal
+.env
+vendor/

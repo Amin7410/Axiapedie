@@ -1,0 +1,8 @@
+p, reader, /wiki/*, read
+p, writer, /wiki/*, read
+p, writer, /editor/*, read
+p, writer, /editor/*, write
+
+g, guest, reader
+g, admin, writer
+g, writer, writer

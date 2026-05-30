@@ -1,0 +1,243 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{template "title" .}} - Axia Wiki</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import Google Fonts (Inter & Playfair Display for Wikipedia-style serif reading) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/main.css?v=1.0.2">
+</head>
+<body class="bg-[#f1f5f9] text-[#202122] min-h-screen flex flex-col overflow-x-hidden" data-user-role="{{.SessionUserRole}}">
+    <script>!function(){var b=document.body,t=localStorage.getItem("axia-theme")||"light",s=localStorage.getItem("axia-text-size")||"md",w=localStorage.getItem("axia-content-width")||"standard";b.classList.add("text-size-"+s,"content-width-"+w);"auto"===t?(b.classList.add("theme-auto"),b.classList.add(window.matchMedia("(prefers-color-scheme: dark)").matches?"theme-dark":"theme-light")):b.classList.add("theme-"+t)}();</script>
+    <!-- Toast notification container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 max-w-xs w-full select-none pointer-events-none"></div>
+ 
+    <script src="/static/js/dialogs.js?v=1.0.5" defer></script>
+    <script src="/static/js/sidebar.js?v=1.0.5" defer></script>
+    <script src="/static/js/explorer.js?v=1.0.5" defer></script>
+    <script src="/static/js/search.js?v=1.0.5" defer></script>
+    <script src="/static/js/settings.js?v=1.0.5" defer></script>
+    
+    <div class="flex flex-1 relative">
+        <!-- LEFT SIDEBAR (Wikipedia Style, Scrollable) -->
+        <aside id="wiki-sidebar" class="w-64 border-r border-[#cbd5e1] bg-[#f9fafb] flex flex-col p-6 space-y-6 select-none h-screen sticky top-0 shrink-0">
+            <!-- Logo & Brand -->
+            <a href="/wiki/Home" hx-get="/wiki/Home" hx-target="#wiki-content" hx-swap="innerHTML" hx-push-url="true" class="flex flex-col items-center pb-4 border-b border-gray-200 w-full hover:opacity-80 transition cursor-pointer select-none">
+                <span class="text-3xl font-extrabold text-blue-600 tracking-wider">AXIA</span>
+                <span class="text-xs uppercase tracking-widest text-gray-500 font-bold mt-1">Wiki System</span>
+            </a>
+
+            <!-- Documents Explorer (IDE Style) -->
+            <div class="space-y-3 flex-grow flex flex-col min-h-0">
+                <div class="flex items-center justify-between shrink-0">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Documents</h3>
+                    
+                    <div class="flex gap-1">
+                        <button onclick="createNodeAtActiveParent(false)" class="p-1 hover:bg-gray-200 rounded text-xs text-gray-500 font-bold hover:text-blue-600" title="Create a new page in the current folder">+📄</button>
+                        <button onclick="createNodeAtActiveParent(true)" class="p-1 hover:bg-gray-200 rounded text-xs text-gray-500 font-bold hover:text-blue-600" title="Create a new folder in the current folder">+📁</button>
+                    </div>
+                </div>
+                <!-- Tree container -->
+                <div id="explorer-tree" class="flex-grow overflow-y-auto space-y-0.5 border-t border-gray-100 pt-2 text-sm pr-1">
+                    <div class="text-xs text-gray-400 italic p-2 text-center">Loading...</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- SIDEBAR RESIZER -->
+        <div id="sidebar-resizer" class="w-1 hover:w-1.5 active:w-1.5 bg-gray-200 hover:bg-blue-400 active:bg-blue-600 cursor-col-resize select-none shrink-0 transition-colors z-45"></div>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <!-- Top Header Search & Toggle & Account -->
+            <header class="h-16 border-b border-[#cbd5e1] bg-[#f9fafb] px-6 flex items-center justify-between shadow-sm select-none">
+                <div class="flex items-center gap-4 flex-1">
+                    <!-- Hamburger Button -->
+                    <button id="sidebar-toggle" class="p-2 text-gray-600 hover:bg-gray-100 rounded focus:outline-none transition" title="Toggle sidebar">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- Search bar -->
+                    <form id="search-form" action="/search" method="GET" hx-get="/search" hx-target="#wiki-content" hx-swap="innerHTML" class="w-full max-w-lg flex items-center relative">
+                        <div class="relative w-full">
+                            <!-- Search Icon -->
+                            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            
+                            <!-- Search Input -->
+                            <input type="text" id="search-input" name="q" placeholder="Search Axia Wiki... (Ctrl + K)" 
+                                   value="{{if .Query}}{{.Query}}{{end}}"
+                                   autocomplete="off"
+                                   class="w-full bg-[#e2e8f0]/60 hover:bg-slate-200/80 border border-transparent rounded-lg pl-10 pr-12 py-2 text-sm focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-gray-800 transition duration-150">
+                            
+                            <!-- Hotkey Badge -->
+                            <div class="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 border border-slate-200 rounded text-[9px] text-slate-400 font-mono bg-white select-none pointer-events-none">
+                                <span>/</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Suggestions Dropdown -->
+                        <div id="search-suggestions" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden text-sm max-h-[320px] overflow-y-auto transform origin-top transition-all duration-100">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Settings & Account (Top Right) -->
+                <div class="flex items-center gap-2 ml-4">
+                    <!-- Gear Button -->
+                    <div class="relative">
+                        <button id="settings-btn" class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 focus:outline-none transition" title="Appearance settings">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                            </svg>
+                        </button>
+
+                        <!-- Settings Dropdown Panel -->
+                        <div id="settings-panel" class="hidden absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-xl shadow-2xl z-50 select-none transform scale-95 opacity-0 transition-all duration-150 origin-top-right">
+                            <div class="px-5 pt-4 pb-3">
+                                <h4 class="text-sm font-bold text-gray-900 flex items-center gap-1.5">🎨 Appearance</h4>
+                            </div>
+                            <div class="px-5 py-3 border-t border-gray-100">
+                                <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Text size</p>
+                                <div class="setting-group" data-setting="text-size">
+                                    <button type="button" class="setting-pill" data-value="sm">Small</button>
+                                    <button type="button" class="setting-pill active" data-value="md">Standard</button>
+                                    <button type="button" class="setting-pill" data-value="lg">Large</button>
+                                </div>
+                            </div>
+                            <div class="px-5 py-3 border-t border-gray-100">
+                                <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Content width</p>
+                                <div class="setting-group" data-setting="content-width">
+                                    <button type="button" class="setting-pill active" data-value="standard">Standard</button>
+                                    <button type="button" class="setting-pill" data-value="wide">Wide</button>
+                                </div>
+                            </div>
+                            <div class="px-5 py-3 border-t border-gray-100">
+                                <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Theme</p>
+                                <div class="setting-group" data-setting="theme">
+                                    <button type="button" class="setting-pill" data-value="auto">Auto</button>
+                                    <button type="button" class="setting-pill active" data-value="light">Light</button>
+                                    <button type="button" class="setting-pill" data-value="dark">Dark</button>
+                                </div>
+                            </div>
+                            <div class="px-5 py-2.5 border-t border-gray-100">
+                                <p class="text-[10px] text-gray-400 italic">Settings are saved automatically in this browser.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Area -->
+                    <div class="relative">
+                        {{if .SessionUserID}}
+                        <!-- Avatar Button -->
+                        <button id="account-dropdown-btn" class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-base border border-blue-700 focus:outline-none shadow-sm transition uppercase" title="Account">
+                            {{if .SessionUsername}}{{printf "%.1s" .SessionUsername}}{{else}}U{{end}}
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="account-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <p class="text-xs text-gray-400">Signed in as</p>
+                                <p class="text-sm font-semibold text-gray-800 truncate" title="{{.SessionUsername}}">
+                                    {{if .SessionUsername}}{{.SessionUsername}}{{else}}{{.SessionUserID}}{{end}}
+                                </p>
+                                <span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 rounded capitalize">Role: {{.SessionUserRole}}</span>
+                            </div>
+                            <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">👤 Profile</a>
+                            <a href="/wiki/Home" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">📄 Documents</a>
+                            <a href="/bookmarks" hx-get="/bookmarks" hx-target="#wiki-content" hx-swap="innerHTML" hx-push-url="true"
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-1.5">
+                                ⭐ Saved articles
+                            </a>
+                            <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium transition">🚪 Sign out</a>
+                        </div>
+                        {{else}}
+                        <div class="flex items-center gap-2">
+                            <a href="/login" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded shadow-sm transition">
+                                Sign in
+                            </a>
+                            <button onclick="window.showCustomAlert('Notice', 'Registration is currently closed. Please contact an administrator to request an account.')" 
+                                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 text-sm font-semibold py-2 px-4 rounded shadow-sm transition">
+                                Register
+                            </button>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Page Workspace -->
+            <main class="flex-grow p-8 max-w-[1350px] w-full mx-auto">
+                <div id="wiki-content" class="bg-white border border-[#a2a9b1] shadow-sm rounded-lg p-10 min-h-[600px]">
+                    {{template "content" .}}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Explorer context menu -->
+    <div id="explorer-context-menu" class="hidden absolute bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-xl py-1.5 min-w-[200px] z-50 text-sm font-medium transition-all duration-150 transform scale-95 opacity-0 select-none">
+        <button id="ctx-rename" class="w-full text-left px-4 py-2.5 hover:bg-blue-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">✏️</span> <span>Rename</span>
+        </button>
+        <button id="ctx-delete" class="w-full text-left px-4 py-2.5 hover:bg-red-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">🗑️</span> <span>Delete folder/page</span>
+        </button>
+        <button id="ctx-lock" class="w-full text-left px-4 py-2.5 hover:bg-amber-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">🔒</span> <span>Lock</span>
+        </button>
+        <button id="ctx-unlock" class="w-full text-left px-4 py-2.5 hover:bg-emerald-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">🔓</span> <span>Unlock</span>
+        </button>
+        <button id="ctx-report" class="w-full text-left px-4 py-2.5 hover:bg-rose-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">🚨</span> <span>Report</span>
+        </button>
+    </div>
+    <!-- Reusable Custom Modal (Prompt / Confirm / Alert) -->
+    <div id="custom-dialog-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6 transform scale-95 opacity-0 transition-all duration-150 ease-out" id="custom-dialog-box">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-1.5 select-none font-sans" id="custom-dialog-title">
+                Notice
+            </h3>
+            <p class="text-xs text-gray-500 mt-1.5 select-none font-sans" id="custom-dialog-message">
+                Message content...
+            </p>
+            
+            <!-- Input field for prompt type -->
+            <div class="mt-4 font-sans hidden" id="custom-dialog-input-container">
+                <input type="text" id="custom-dialog-input" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            </div>
+            
+            <div class="mt-6 flex items-center justify-end gap-2 font-sans">
+                <button type="button" id="custom-dialog-cancel-btn" class="px-4 py-2 text-xs font-semibold border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition">
+                    Cancel
+                </button>
+                <button type="button" id="custom-dialog-confirm-btn" class="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to top -->
+    <button id="back-to-top-btn" class="hidden fixed bottom-6 right-6 z-[999] bg-slate-800/60 hover:bg-slate-800 backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 focus:outline-none" title="Back to top">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+        </svg>
+    </button>
+</body>
+</html>
+{{end}}

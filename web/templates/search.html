@@ -1,0 +1,45 @@
+{{template "layout" .}}
+
+{{define "title"}}Search results for "{{.Query}}"{{end}}
+
+{{define "content"}}
+<!-- Search Header -->
+<div class="mb-6">
+    <h1 class="text-3xl font-normal font-serif text-gray-900 leading-tight">Search results</h1>
+    <p class="text-xs text-gray-500 italic mt-1">Articles matching your query</p>
+    <hr class="mt-2 border-[#a2a9b1]">
+</div>
+
+<div class="mb-8">
+    <form action="/search" method="GET" class="flex gap-2">
+        <input type="text" name="q" value="{{.Query}}" 
+               class="border border-[#a2a9b1] rounded px-4 py-2 w-full max-w-lg focus:outline-none focus:border-blue-500 text-sm">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded text-sm transition">
+            Search
+        </button>
+    </form>
+</div>
+
+<div>
+    {{if .Results}}
+        <p class="text-xs text-gray-500 mb-4 select-none">Best matches:</p>
+        <ul class="space-y-4">
+            {{range .Results}}
+                <li class="p-4 border border-gray-200 rounded hover:bg-gray-50 transition bg-white">
+                    <a href="/wiki/{{.Title}}" class="text-lg font-semibold text-blue-600 hover:underline">
+                        📄 {{.Title}}
+                    </a>
+                    <div class="text-xs text-gray-400 mt-1">
+                        Last updated: {{.UpdatedAt.Format "Jan 2, 2006 3:04 PM"}}
+                    </div>
+                </li>
+            {{end}}
+        </ul>
+    {{else}}
+        <div class="p-8 text-center bg-gray-50 rounded border border-dashed border-gray-300">
+            <p class="text-gray-500 text-sm">No results found for "<span class="font-semibold">{{.Query}}</span>".</p>
+            <p class="text-xs text-gray-400 mt-2">You can <a href="/editor/{{.Query}}" class="text-blue-600 hover:underline font-semibold">create a new article "{{.Query}}"</a>.</p>
+        </div>
+    {{end}}
+</div>
+{{end}}
