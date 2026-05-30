@@ -10,6 +10,11 @@ import (
 	_ "github.com/tursodatabase/libsql-client-go/libsql" // Pure Go LibSQL driver
 )
 
+// IsCloudDSN returns true if the DSN points to a remote Turso/LibSQL database.
+func IsCloudDSN(dsn string) bool {
+	return strings.HasPrefix(dsn, "libsql://") || strings.HasPrefix(dsn, "http://") || strings.HasPrefix(dsn, "https://")
+}
+
 // NewSQLiteDB creates a connection to the SQLite database.
 func NewSQLiteDB(dsn string) (*sql.DB, error) {
 	if dsn == "" {
@@ -20,7 +25,7 @@ func NewSQLiteDB(dsn string) (*sql.DB, error) {
 	var connString string
 
 	// If DSN is a remote Turso/LibSQL database URL
-	if strings.HasPrefix(dsn, "libsql://") || strings.HasPrefix(dsn, "http://") || strings.HasPrefix(dsn, "https://") {
+	if IsCloudDSN(dsn) {
 		driverName = "libsql"
 		connString = dsn
 	} else {
@@ -44,15 +49,37 @@ func NewSQLiteDB(dsn string) (*sql.DB, error) {
 }
 
 // Migrate loads the schema from the given file and executes it.
+// For LibSQL/Turso compatibility, statements are executed one at a time.
 func Migrate(db *sql.DB, schemaPath string) error {
 	schema, err := os.ReadFile(schemaPath)
 	if err != nil {
 		return fmt.Errorf("could not read schema file: %w", err)
 	}
 
-	_, err = db.Exec(string(schema))
-	if err != nil {
-		return fmt.Errorf("could not execute schema: %w", err)
+	// Split into individual statements and execute one by one
+	// (libsql HTTP driver does not support multi-statement Exec)
+	statements := strings.Split(string(schema), ";")
+	for _, stmt := range statements {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" {
+			continue
+		}
+		// Skip comment-only lines
+		lines := strings.Split(stmt, "\n")
+		hasCode := false
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed != "" && !strings.HasPrefix(trimmed, "--") {
+				hasCode = true
+				break
+			}
+		}
+		if !hasCode {
+			continue
+		}
+		if _, err := db.Exec(stmt); err != nil {
+			return fmt.Errorf("could not execute statement: %w\nStatement: %.100s", err, stmt)
+		}
 	}
 
 	return nil

@@ -29,7 +29,12 @@ func main() {
 
 	// Auto-migrate schema
 	log.Println("Running auto-migration...")
-	if err := db.Migrate(database, "db/migrations/schema.sql"); err != nil {
+	schemaPath := "db/migrations/schema.sql"
+	if db.IsCloudDSN(dbDSN) {
+		schemaPath = "db/migrations/schema_turso.sql"
+		log.Println("Using Turso-compatible schema (no PRAGMA/FTS5/TRIGGER)")
+	}
+	if err := db.Migrate(database, schemaPath); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 	// Add subtitle column if it does not exist (for compatibility with older DB files)
