@@ -1,5 +1,5 @@
 # Stage 1: Build binary
-FROM golang:1.23-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Install build tools for CGO (required by mattn/go-sqlite3)
 RUN apk add --no-cache gcc musl-dev sqlite-dev
