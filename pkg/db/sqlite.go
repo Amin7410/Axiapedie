@@ -44,6 +44,9 @@ func NewSQLiteDB(dsn string) (*sql.DB, error) {
 
 	// Tự động thêm cột sort_order nếu chưa tồn tại
 	_, _ = db.Exec("ALTER TABLE documents ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+	// Tự động thêm cột google_id cho chức năng đăng nhập Google
+	_, _ = db.Exec("ALTER TABLE users ADD COLUMN google_id TEXT")
+	_, _ = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
 
 	return db, nil
 }
@@ -56,8 +59,15 @@ func Migrate(db *sql.DB, schemaPath string) error {
 		return fmt.Errorf("could not read schema file: %w", err)
 	}
 
-	// Split into individual statements and execute one by one
-	// (libsql HTTP driver does not support multi-statement Exec)
+	// Nếu là local SQLite, chạy toàn bộ file cùng lúc để hỗ trợ trigger chứa dấu chấm phẩy
+	if !strings.Contains(schemaPath, "schema_turso.sql") {
+		if _, err := db.Exec(string(schema)); err != nil {
+			return fmt.Errorf("could not execute schema: %w", err)
+		}
+		return nil
+	}
+
+	// Nếu là Turso/LibSQL Cloud, phân tách và chạy từng câu lệnh một
 	statements := strings.Split(string(schema), ";")
 	for _, stmt := range statements {
 		stmt = strings.TrimSpace(stmt)

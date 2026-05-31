@@ -3,6 +3,7 @@ package html
 import (
 	"html/template"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"axia-wiki/internal/domain"
@@ -94,7 +95,10 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var htmlContent string
-	if doc != nil && content != "" {
+	var breadcrumbs []map[string]interface{}
+	description := "Axia Wiki - A modern, high-performance personal wiki and knowledge management system."
+
+	if doc != nil {
 		allDocs, _ := h.usecase.GetAll(r.Context())
 		existingMap := make(map[string]bool)
 		for _, ad := range allDocs {
@@ -107,17 +111,53 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 			return existingMap[strings.ToLower(strings.TrimSpace(targetTitle))]
 		}
 
-		parsed, err := parser.ParseToHTML(content, existFn)
-		if err == nil {
-			htmlContent = parsed
-		} else {
-			htmlContent = "<p class='text-red-500'>Error parsing markdown</p>"
+		if content != "" {
+			parsed, err := parser.ParseToHTML(content, existFn)
+			if err == nil {
+				htmlContent = parsed
+			} else {
+				htmlContent = "<p class='text-red-500'>Error parsing markdown</p>"
+			}
+
+			if h.glossaryUsecase != nil {
+				terms, _ := h.glossaryUsecase.GetAllTerms(r.Context())
+				annotator := parser.NewGlossaryAnnotator(terms)
+				htmlContent = annotator.AnnotateHTML(htmlContent)
+			}
 		}
 
-		if h.glossaryUsecase != nil {
-			terms, _ := h.glossaryUsecase.GetAllTerms(r.Context())
-			annotator := parser.NewGlossaryAnnotator(terms)
-			htmlContent = annotator.AnnotateHTML(htmlContent)
+		// Build breadcrumbs
+		docMap := make(map[string]*domain.Document)
+		for _, ad := range allDocs {
+			docMap[ad.ID] = ad
+		}
+
+		curr := doc
+		visited := make(map[string]bool)
+		visited[curr.ID] = true
+		for curr.ParentID != nil {
+			pID := *curr.ParentID
+			if pID == "" || pID == "root" || visited[pID] {
+				break
+			}
+			visited[pID] = true
+			parentDoc, exists := docMap[pID]
+			if !exists {
+				break
+			}
+			breadcrumbs = append([]map[string]interface{}{{
+				"Title":    parentDoc.Title,
+				"Link":     "/wiki/" + parentDoc.Title,
+				"IsFolder": parentDoc.IsFolder,
+			}}, breadcrumbs...)
+			curr = parentDoc
+		}
+
+		// Make SEO description
+		if doc.Subtitle != "" {
+			description = doc.Subtitle
+		} else if content != "" {
+			description = makeDescription(content)
 		}
 	}
 
@@ -129,6 +169,8 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 		"DocID":        "",
 		"Subtitle":     "",
 		"DoesNotExist": false,
+		"Breadcrumbs":  breadcrumbs,
+		"Description":  description,
 	}
 	if doc != nil {
 		data["DocID"] = doc.ID
@@ -311,4 +353,49 @@ func (h *DocumentHandler) Bookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.render(w, r, "bookmarks.html", data)
+}
+
+func makeDescription(markdown string) string {
+	// 1. Loại bỏ wiki links: [[Page Title|Display Text]] -> Display Text, [[Title]] -> Title
+	reWiki := regexp.MustCompile(`\[\[([^\]|]+)(?:\|([^\]]+))?\]\]`)
+	text := reWiki.ReplaceAllStringFunc(markdown, func(m string) string {
+		submatches := reWiki.FindStringSubmatch(m)
+		if len(submatches) > 2 && submatches[2] != "" {
+			return submatches[2]
+		}
+		if len(submatches) > 1 {
+			return submatches[1]
+		}
+		return ""
+	})
+
+	// 2. Loại bỏ định dạng tiêu đề
+	reHeaders := regexp.MustCompile(`(?m)^#+\s+(.*)$`)
+	text = reHeaders.ReplaceAllString(text, "$1")
+
+	// 3. Loại bỏ ký tự in đậm, in nghiêng
+	reBoldItalic := regexp.MustCompile(`\*\*([^*]+)\*\*|__([^_]+)__| \*([^*]+)\*| _([^_]+)_`)
+	text = reBoldItalic.ReplaceAllString(text, "$1$2$3$4")
+
+	// 4. Loại bỏ các khối code inline
+	reCode := regexp.MustCompile("`([^`]+)`")
+	text = reCode.ReplaceAllString(text, "$1")
+
+	// 5. Loại bỏ thẻ HTML thô nếu có
+	reTags := regexp.MustCompile(`<[^>]*>`)
+	text = reTags.ReplaceAllString(text, "")
+
+	// Chuẩn hóa khoảng trắng
+	text = strings.Join(strings.Fields(text), " ")
+
+	// Giới hạn trong khoảng 155-160 ký tự
+	if len(text) > 160 {
+		cutIdx := 157
+		if lastSpace := strings.LastIndex(text[:cutIdx], " "); lastSpace > 120 {
+			cutIdx = lastSpace
+		}
+		text = text[:cutIdx] + "..."
+	}
+
+	return text
 }

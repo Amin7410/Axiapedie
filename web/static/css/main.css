@@ -443,3 +443,81 @@ body.theme-dark .wiki-content .wiki-link-red:hover {
     border-bottom-left-radius: 0px !important;
     border-bottom-right-radius: 0px !important;
 }
+
+/* ================================================
+   TABLE OF CONTENTS (TOC) STYLES
+   ================================================ */
+
+/* Custom scrollbar for desktop TOC sidebar */
+#article-toc-container::-webkit-scrollbar {
+    width: 4px;
+}
+#article-toc-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+#article-toc-container::-webkit-scrollbar-thumb {
+    background-color: #e2e8f0;
+    border-radius: 4px;
+}
+#article-toc-container::-webkit-scrollbar-thumb:hover {
+    background-color: #cbd5e1;
+}
+
+/* Light theme TOC link defaults */
+#article-toc a {
+    color: #64748b; /* slate-500 */
+}
+#article-toc a:hover {
+    color: #2563eb; /* blue-600 */
+}
+
+/* Dark theme TOC adjustments */
+body.theme-dark #article-toc-container {
+    border-color: var(--ax-dark-border) !important;
+}
+body.theme-dark #article-toc-container::-webkit-scrollbar-thumb {
+    background-color: var(--ax-dark-border);
+}
+body.theme-dark #article-toc-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--ax-dark-muted);
+}
+body.theme-dark #article-toc h4 {
+    color: var(--ax-dark-muted) !important;
+}
+body.theme-dark #article-toc a {
+    color: var(--ax-dark-text-2) !important;
+}
+body.theme-dark #article-toc a:hover {
+    color: var(--ax-dark-link) !important;
+}
+body.theme-dark #article-toc a.text-blue-600 {
+    color: var(--ax-dark-link) !important;
+    border-color: var(--ax-dark-focus) !important;
+}
+
+/* Mobile TOC Styles */
+#mobile-toc-container {
+    transition: all 0.2s ease;
+}
+body.theme-dark #mobile-toc-container {
+    background-color: var(--ax-dark-surface-2) !important;
+    border-color: var(--ax-dark-border) !important;
+}
+body.theme-dark #mobile-toc-container button {
+    color: var(--ax-dark-text) !important;
+}
+body.theme-dark #mobile-toc-container button span {
+    color: var(--ax-dark-text) !important;
+}
+body.theme-dark #mobile-toc-container button #mobile-toc-toggle-icon {
+    color: var(--ax-dark-muted) !important;
+}
+body.theme-dark #mobile-toc-content {
+    border-color: var(--ax-dark-border) !important;
+}
+body.theme-dark #mobile-toc-list a {
+    color: var(--ax-dark-text-2) !important;
+}
+body.theme-dark #mobile-toc-list a:hover {
+    color: var(--ax-dark-link) !important;
+}

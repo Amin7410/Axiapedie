@@ -45,6 +45,25 @@ func CasbinAuthzMiddleware(enforcer *casbin.Enforcer, next http.HandlerFunc) htt
 			// API đọc danh sách thư mục hoặc gợi ý tag được ánh xạ sang quyền read của wiki
 			casbinObj = "/wiki/*"
 			act = "read"
+		} else if strings.HasPrefix(obj, "/admin/") || strings.HasPrefix(obj, "/api/admin/") {
+			// Các tài nguyên và API quản trị hệ thống
+			casbinObj = "/admin/*"
+			act = "write"
+			if r.Method == http.MethodGet {
+				act = "read"
+			}
+		} else if strings.HasPrefix(obj, "/profile") {
+			if userRole == "guest" {
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", "/login")
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+			next.ServeHTTP(w, r)
+			return
 		} else if strings.HasPrefix(obj, "/api/") {
 			// Các API thay đổi dữ liệu được ánh xạ sang quyền write của editor
 			casbinObj = "/editor/*"

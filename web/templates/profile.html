@@ -1,0 +1,140 @@
+{{template "layout" .}}
+
+{{define "title"}}Profile{{end}}
+
+{{define "content"}}
+<div class="max-w-2xl mx-auto my-6 font-sans">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-1.5 text-xs text-slate-400 font-semibold mb-6 select-none uppercase tracking-wider">
+        <a href="/wiki/Home" class="hover:text-blue-600 transition">Home</a>
+        <span>/</span>
+        <span class="text-slate-600">Profile</span>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="mb-8 select-none">
+        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2.5">
+            <span>👤</span> User Profile
+        </h1>
+        <p class="text-sm text-slate-500 mt-2">Manage your account details and security settings.</p>
+    </div>
+
+    <!-- Error/Success Alerts -->
+    {{if .Error}}
+    <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-r mb-6 text-sm font-medium flex items-start gap-2.5 animate-fade-in shadow-sm select-none">
+        <span class="text-base shrink-0">⚠️</span>
+        <span>{{.Error}}</span>
+    </div>
+    {{end}}
+
+    {{if .Success}}
+    <div class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-4 rounded-r mb-6 text-sm font-medium flex items-start gap-2.5 animate-fade-in shadow-sm select-none">
+        <span class="text-base shrink-0">✅</span>
+        <span>{{.Success}}</span>
+    </div>
+    {{end}}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Profile Card -->
+        <div class="md:col-span-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl shadow-md p-6 flex flex-col items-center justify-between select-none">
+            <div class="flex flex-col items-center text-center w-full">
+                <!-- Avatar Circle -->
+                <div class="w-20 h-20 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-3xl font-extrabold shadow-inner uppercase mb-4">
+                    {{if .User.Username}}{{printf "%.1s" .User.Username}}{{else}}U{{end}}
+                </div>
+                <h2 class="text-xl font-bold tracking-tight truncate w-full" title="{{.User.Username}}">
+                    {{.User.Username}}
+                </h2>
+                <span class="inline-block mt-2 px-2.5 py-1 text-xs font-semibold bg-white/10 backdrop-blur-sm border border-white/20 rounded-full capitalize">
+                    Role: {{.User.Role}}
+                </span>
+            </div>
+            
+            <div class="w-full mt-8 pt-4 border-t border-white/10 text-center">
+                <p class="text-[10px] text-white/60 font-semibold uppercase tracking-wider">Member Since</p>
+                <p class="text-xs font-medium mt-1 text-white/90" id="formatted-date">{{.User.CreatedAt}}</p>
+            </div>
+        </div>
+
+        <!-- Settings / Change Password Form -->
+        <div class="md:col-span-2 bg-white border border-slate-200/80 shadow-md rounded-xl p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 pb-3 border-b border-slate-100 select-none">
+                <span>🔑</span> Change Password
+            </h3>
+
+            <form action="/profile/change-password" method="POST" class="space-y-4" onsubmit="return validatePasswordForm(this)">
+                <!-- Current Password -->
+                <div>
+                    <label for="old_password" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Password</label>
+                    <input type="password" name="old_password" id="old_password" required
+                           placeholder="Enter your current password"
+                           class="w-full bg-[#f8fafc] border border-slate-200 hover:border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-800 transition duration-150">
+                </div>
+
+                <!-- New Password -->
+                <div>
+                    <label for="new_password" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">New Password</label>
+                    <input type="password" name="new_password" id="new_password" required
+                           placeholder="Minimum 8 characters"
+                           class="w-full bg-[#f8fafc] border border-slate-200 hover:border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-800 transition duration-150">
+                </div>
+
+                <!-- Confirm New Password -->
+                <div>
+                    <label for="confirm_password" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Confirm New Password</label>
+                    <input type="password" name="confirm_password" id="confirm_password" required
+                           placeholder="Repeat your new password"
+                           class="w-full bg-[#f8fafc] border border-slate-200 hover:border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-800 transition duration-150">
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-2">
+                    <button type="submit"
+                            class="w-full md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition duration-150 text-sm">
+                        Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Client-side verification for password change
+    function validatePasswordForm(form) {
+        const oldPass = form.old_password.value;
+        const newPass = form.new_password.value;
+        const confirm = form.confirm_password.value;
+
+        if (newPass.length < 8) {
+            window.showToast('New password must be at least 8 characters long.', 'error');
+            return false;
+        }
+
+        if (newPass !== confirm) {
+            window.showToast('New passwords do not match.', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Format registration date nicely
+    const dateEl = document.getElementById('formatted-date');
+    if (dateEl) {
+        try {
+            const rawDate = dateEl.innerText;
+            const parsed = new Date(rawDate);
+            if (!isNaN(parsed.getTime())) {
+                dateEl.innerText = parsed.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        } catch (e) {
+            console.error('Date formatting failed', e);
+        }
+    }
+</script>
+{{end}}

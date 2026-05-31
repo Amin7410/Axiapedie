@@ -15,6 +15,8 @@ import (
 	"axia-wiki/pkg/db"
 
 	"github.com/casbin/casbin/v2"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 func main() {
@@ -75,10 +77,30 @@ func main() {
 	tagUsecase := usecase.NewTagUsecase(tagRepo)
 	bookmarkUsecase := usecase.NewBookmarkUsecase(bookmarkRepo)
 
+	var oauthConfig *oauth2.Config
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	googleRedirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
+	if googleClientID != "" && googleClientSecret != "" && googleRedirectURL != "" {
+		log.Println("Setting up Google OAuth2 configuration...")
+		oauthConfig = &oauth2.Config{
+			ClientID:     googleClientID,
+			ClientSecret: googleClientSecret,
+			RedirectURL:  googleRedirectURL,
+			Scopes: []string{
+				"https://www.googleapis.com/auth/userinfo.email",
+				"https://www.googleapis.com/auth/userinfo.profile",
+			},
+			Endpoint: google.Endpoint,
+		}
+	} else {
+		log.Println("Warning: Google OAuth2 environment variables are not fully configured. Google sign-in will show configuration notice.")
+	}
+
 	// Initialize HTTP Handlers
 	docHandler := html.NewDocumentHandler(docUsecase, glossaryUsecase, tagUsecase, bookmarkUsecase)
 	apiHandler := api.NewDocumentAPIHandler(docUsecase)
-	authHandler := html.NewAuthHandler(authUsecase)
+	authHandler := html.NewAuthHandler(authUsecase, oauthConfig)
 	explorerAPIHandler := api.NewExplorerAPIHandler(docUsecase)
 	mediaAPIHandler := api.NewMediaAPIHandler(mediaUsecase)
 	glossaryHandler := html.NewGlossaryHandler(glossaryUsecase)
@@ -110,7 +132,16 @@ func main() {
 			authHandler.LoginPage(w, r)
 		}
 	})
+	mux.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			authHandler.RegisterSubmit(w, r)
+		} else {
+			authHandler.RegisterPage(w, r)
+		}
+	})
 	mux.HandleFunc("/logout", authHandler.Logout)
+	mux.HandleFunc("/auth/google", authHandler.GoogleLogin)
+	mux.HandleFunc("/auth/google/callback", authHandler.GoogleCallback)
 
 	// Routes cho Wiki - Bọc bằng CasbinAuthzMiddleware
 	mux.HandleFunc("/", middleware.CasbinAuthzMiddleware(enforcer, docHandler.View))
@@ -120,6 +151,31 @@ func main() {
 	mux.HandleFunc("/search", middleware.CasbinAuthzMiddleware(enforcer, docHandler.Search))
 	mux.HandleFunc("/bookmarks", middleware.CasbinAuthzMiddleware(enforcer, docHandler.Bookmarks))
 	mux.HandleFunc("/ui/glossary/tooltip/", middleware.CasbinAuthzMiddleware(enforcer, glossaryHandler.Tooltip))
+
+	// User Profile and Admin Management Routes
+	mux.HandleFunc("/profile", middleware.CasbinAuthzMiddleware(enforcer, authHandler.ProfilePage))
+	mux.HandleFunc("/profile/change-password", middleware.CasbinAuthzMiddleware(enforcer, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			authHandler.ChangePasswordSubmit(w, r)
+		} else {
+			http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		}
+	}))
+	mux.HandleFunc("/admin/users", middleware.CasbinAuthzMiddleware(enforcer, authHandler.AdminUsersPage))
+	mux.HandleFunc("/api/admin/users/role", middleware.CasbinAuthzMiddleware(enforcer, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			authHandler.AdminUpdateUserRole(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+	mux.HandleFunc("/api/admin/users/delete", middleware.CasbinAuthzMiddleware(enforcer, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			authHandler.AdminDeleteUser(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
 
 	// RESTful JSON APIs
 	mux.HandleFunc("/api/v1/documents/save", middleware.CasbinAuthzMiddleware(enforcer, apiHandler.SaveDocument))
