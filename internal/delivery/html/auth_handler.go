@@ -45,6 +45,7 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Error":          "",
 		"SuccessMessage": msg,
+		"CSRFToken":      middleware.GetCSRFToken(r),
 	}
 	h.templates["login.html"].ExecuteTemplate(w, "login.html", data)
 }
@@ -63,7 +64,8 @@ func (h *AuthHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Login failed for user '%s': %v", username, err)
 		data := map[string]interface{}{
-			"Error": "Invalid username or password.",
+			"Error":     "Invalid username or password.",
+			"CSRFToken": middleware.GetCSRFToken(r),
 		}
 		h.templates["login.html"].ExecuteTemplate(w, "login.html", data)
 		return
@@ -72,7 +74,7 @@ func (h *AuthHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	// Đăng nhập thành công - Set cookie session
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_user_id",
-		Value:    user.ID,
+		Value:    middleware.SignValue(user.ID),
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   86400 * 7, // 7 ngày
@@ -80,7 +82,7 @@ func (h *AuthHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_user_role",
-		Value:    user.Role,
+		Value:    middleware.SignValue(user.Role),
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   86400 * 7,
@@ -88,7 +90,7 @@ func (h *AuthHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_username",
-		Value:    user.Username,
+		Value:    middleware.SignValue(user.Username),
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   86400 * 7,
@@ -102,8 +104,9 @@ func (h *AuthHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 // RegisterPage handles GET /register
 func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
-		"Error":    "",
-		"Username": "",
+		"Error":     "",
+		"Username":  "",
+		"CSRFToken": middleware.GetCSRFToken(r),
 	}
 	h.templates["register.html"].ExecuteTemplate(w, "register.html", data)
 }
@@ -121,31 +124,31 @@ func (h *AuthHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Kiểm tra mật khẩu khớp
 	if password != confirmPassword {
-		h.renderRegisterError(w, "Passwords do not match.", username)
+		h.renderRegisterError(w, r, "Passwords do not match.", username)
 		return
 	}
 
 	// 2. Kiểm tra độ dài mật khẩu (tối thiểu 8, tối đa 72)
 	if len(password) < 8 {
-		h.renderRegisterError(w, "Password must be at least 8 characters long.", username)
+		h.renderRegisterError(w, r, "Password must be at least 8 characters long.", username)
 		return
 	}
 	if len(password) > 72 {
-		h.renderRegisterError(w, "Password is too long (maximum 72 characters).", username)
+		h.renderRegisterError(w, r, "Password is too long (maximum 72 characters).", username)
 		return
 	}
 
 	// 3. Kiểm tra định dạng tên đăng nhập (chỉ chữ không dấu, số, gạch dưới, từ 3-20 ký tự)
 	rxUsername := regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
 	if !rxUsername.MatchString(username) {
-		h.renderRegisterError(w, "Invalid username. Only alphanumeric characters and underscores are allowed (3-20 characters).", username)
+		h.renderRegisterError(w, r, "Invalid username. Only alphanumeric characters and underscores are allowed (3-20 characters).", username)
 		return
 	}
 
 	// 4. Gọi Usecase đăng ký
 	user, err := h.authUsecase.Register(r.Context(), username, password)
 	if err != nil {
-		h.renderRegisterError(w, "Registration failed: "+err.Error(), username)
+		h.renderRegisterError(w, r, "Registration failed: "+err.Error(), username)
 		return
 	}
 
@@ -154,10 +157,11 @@ func (h *AuthHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login?registered=true", http.StatusSeeOther)
 }
 
-func (h *AuthHandler) renderRegisterError(w http.ResponseWriter, errMsg string, username string) {
+func (h *AuthHandler) renderRegisterError(w http.ResponseWriter, r *http.Request, errMsg string, username string) {
 	data := map[string]interface{}{
-		"Error":    errMsg,
-		"Username": username,
+		"Error":     errMsg,
+		"Username":  username,
+		"CSRFToken": middleware.GetCSRFToken(r),
 	}
 	h.templates["register.html"].ExecuteTemplate(w, "register.html", data)
 }
@@ -198,6 +202,7 @@ func (h *AuthHandler) render(w http.ResponseWriter, r *http.Request, page string
 		m["SessionUserID"] = middleware.GetSessionUserID(r)
 		m["SessionUserRole"] = middleware.GetSessionUserRole(r)
 		m["SessionUsername"] = middleware.GetSessionUsername(r)
+		m["CSRFToken"] = middleware.GetCSRFToken(r)
 		if t, ok := m["Title"].(string); ok {
 			title = t
 		}
@@ -362,7 +367,16 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	state := "state-token-axia"
+	state := middleware.GenerateCSRFToken()
+	http.SetCookie(w, &http.Cookie{
+		Name:     "oauth_state",
+		Value:    state,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   600, // Hạn dùng 10 phút
+		SameSite: http.SameSiteLaxMode,
+	})
+
 	url := h.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -375,7 +389,8 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	state := r.FormValue("state")
-	if state != "state-token-axia" {
+	stateCookie, err := r.Cookie("oauth_state")
+	if err != nil || stateCookie.Value == "" || state != stateCookie.Value {
 		log.Printf("Invalid OAuth state: %s", state)
 		data := map[string]interface{}{
 			"Error": "Invalid security state returned from Google.",
@@ -383,6 +398,14 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		h.templates["login.html"].ExecuteTemplate(w, "login.html", data)
 		return
 	}
+
+	// Xóa cookie state sau khi kiểm tra xong
+	http.SetCookie(w, &http.Cookie{
+		Name:   "oauth_state",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
 
 	code := r.FormValue("code")
 	token, err := h.oauthConfig.Exchange(r.Context(), code)
@@ -435,7 +458,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// Đăng nhập thành công - Set cookie session
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_user_id",
-		Value:    user.ID,
+		Value:    middleware.SignValue(user.ID),
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   86400 * 7,
@@ -443,7 +466,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_user_role",
-		Value:    user.Role,
+		Value:    middleware.SignValue(user.Role),
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   86400 * 7,
@@ -451,7 +474,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_username",
-		Value:    user.Username,
+		Value:    middleware.SignValue(user.Username),
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   86400 * 7,

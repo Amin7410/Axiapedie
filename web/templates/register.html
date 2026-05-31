@@ -23,6 +23,7 @@
 
         <!-- Form fields -->
         <form action="/register" method="POST" class="space-y-5" onsubmit="return validateRegisterForm(this)">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <!-- Username Input -->
             <div>
                 <label for="username" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username</label>

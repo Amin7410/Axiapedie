@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -30,12 +31,17 @@ func NewSQLiteDB(dsn string) (*sql.DB, error) {
 		connString = dsn
 	} else {
 		driverName = "sqlite3"
-		connString = fmt.Sprintf("file:%s?cache=shared&mode=rwc&_fk=1&_journal_mode=WAL", dsn)
+		connString = fmt.Sprintf("file:%s?cache=shared&mode=rwc&_fk=1&_journal_mode=WAL&_busy_timeout=5000", dsn)
 	}
 	
 	db, err := sql.Open(driverName, connString)
 	if err != nil {
 		return nil, err
+	}
+
+	// Giới hạn kết nối tối đa cho SQLite cục bộ để tránh lỗi 'database is locked' khi có ghi đồng thời
+	if !IsCloudDSN(dsn) {
+		db.SetMaxOpenConns(1)
 	}
 
 	if err := db.Ping(); err != nil {
@@ -47,6 +53,19 @@ func NewSQLiteDB(dsn string) (*sql.DB, error) {
 	// Tự động thêm cột google_id cho chức năng đăng nhập Google
 	_, _ = db.Exec("ALTER TABLE users ADD COLUMN google_id TEXT")
 	_, _ = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
+
+	// Tự động dọn dẹp và xây dựng lại chỉ mục FTS5 sạch sẽ dựa trên các bản Live hiện hành
+	if !IsCloudDSN(dsn) {
+		log.Println("Optimizing and rebuilding FTS5 search index to clean up stale revisions...")
+		_, _ = db.Exec("DELETE FROM documents_fts;")
+		_, _ = db.Exec(`
+			INSERT INTO documents_fts (document_id, title, content)
+			SELECT d.id, d.title, CAST(tc.data AS TEXT)
+			FROM documents d
+			JOIN revisions r ON d.published_revision_id = r.id
+			JOIN text_contents tc ON r.id = tc.revision_id;
+		`)
+	}
 
 	return db, nil
 }

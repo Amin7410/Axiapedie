@@ -57,6 +57,7 @@
 {{else}}
 <!-- Editor Form -->
 <form id="editor-form" hx-post="/editor/save" hx-target="#save-result" class="flex flex-col space-y-4">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
     <input type="hidden" name="title" value="{{.Title}}">
     <input type="hidden" name="subtitle" id="subtitle-hidden-input" value="{{.Subtitle}}">
     <!-- Optimistic locking base revision -->

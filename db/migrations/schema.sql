@@ -182,6 +182,10 @@ CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
 CREATE TRIGGER IF NOT EXISTS trg_sync_fts_insert AFTER INSERT ON text_contents
 WHEN new.content_type = 'full'
 BEGIN
+    -- Dọn dẹp dữ liệu cũ của tài liệu này trong FTS5
+    DELETE FROM documents_fts WHERE document_id = (SELECT document_id FROM revisions WHERE id = new.revision_id);
+
+    -- Chèn dữ liệu mới nhất
     INSERT INTO documents_fts (document_id, title, content)
     VALUES (
         (SELECT document_id FROM revisions WHERE id = new.revision_id),

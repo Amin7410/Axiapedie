@@ -309,6 +309,46 @@ window.formatMarkdown = function(prefix, suffix) {
     const formCommentInput = document.getElementById('comment');
     const cancelBtn = document.getElementById('modal-cancel-btn');
     const confirmBtn = document.getElementById('modal-confirm-btn');
+    const titleInput = document.getElementById('document-title-input');
+    const textarea = document.getElementById('content');
+
+    if (editorForm && titleInput && textarea) {
+        const docId = titleInput.getAttribute('data-doc-id');
+        const pageTitle = titleInput.value.trim();
+        const storageKey = 'axia-draft-' + (docId || pageTitle);
+
+        // Kiểm tra và khôi phục bản nháp chưa lưu
+        const savedDraft = localStorage.getItem(storageKey);
+        if (savedDraft && savedDraft !== textarea.value) {
+            setTimeout(async () => {
+                const restore = await window.showCustomConfirm(
+                    "📝 Unsaved Draft Found", 
+                    "We found an unsaved draft from a previous session. Would you like to restore it?"
+                );
+                if (restore) {
+                    textarea.value = savedDraft;
+                    textarea.dispatchEvent(new Event('input')); // kích hoạt tự động giãn cao
+                    window.showToast("Draft restored successfully.");
+                } else {
+                    localStorage.removeItem(storageKey);
+                }
+            }, 500);
+        }
+
+        // Tự động lưu bản nháp sau mỗi 15 giây
+        setInterval(() => {
+            if (textarea.value) {
+                localStorage.setItem(storageKey, textarea.value);
+            }
+        }, 15000);
+
+        // Xóa bản nháp khi lưu thành công qua HTMX
+        editorForm.addEventListener('htmx:afterRequest', (evt) => {
+            if (evt.detail.successful) {
+                localStorage.removeItem(storageKey);
+            }
+        });
+    }
 
     if (saveBtn && editorForm && modal) {
         saveBtn.addEventListener('click', () => {

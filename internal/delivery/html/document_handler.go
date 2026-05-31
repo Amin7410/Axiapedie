@@ -52,6 +52,7 @@ func (h *DocumentHandler) render(w http.ResponseWriter, r *http.Request, page st
 		m["SessionUserID"] = middleware.GetSessionUserID(r)
 		m["SessionUserRole"] = middleware.GetSessionUserRole(r)
 		m["SessionUsername"] = middleware.GetSessionUsername(r)
+		m["CSRFToken"] = middleware.GetCSRFToken(r)
 		if t, ok := m["Title"].(string); ok {
 			title = t
 		}

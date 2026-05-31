@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -58,7 +59,7 @@ func ParseToHTML(source string, existFn func(string) bool) (string, error) {
 		),
 		goldmark.WithRendererOptions(
 			html.WithHardWraps(),
-			html.WithUnsafe(), // Allow raw HTML inside markdown for flexibility
+			html.WithUnsafe(), // Allow raw HTML inside markdown for flexibility, but we sanitize it afterwards.
 		),
 	)
 
@@ -68,5 +69,15 @@ func ParseToHTML(source string, existFn func(string) bool) (string, error) {
 		return "", err
 	}
 
-	return buf.String(), nil
+	// 4. Sanitize HTML using bluemonday to prevent XSS
+	p := bluemonday.UGCPolicy()
+	// Allow HTMX attributes for anchor tags
+	p.AllowAttrs("hx-get", "hx-target", "hx-push-url", "hx-swap").OnElements("a")
+	p.AllowAttrs("class", "title").OnElements("a")
+	// Allow class attributes for text structure tags, spans, and images
+	p.AllowAttrs("class").OnElements("span", "div", "p", "h1", "h2", "h3", "h4", "h5", "h6", "img", "table", "thead", "tbody", "tr", "th", "td")
+
+	sanitized := p.Sanitize(buf.String())
+	return sanitized, nil
 }
+

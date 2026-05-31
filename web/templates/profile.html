@@ -63,6 +63,7 @@
             </h3>
 
             <form action="/profile/change-password" method="POST" class="space-y-4" onsubmit="return validatePasswordForm(this)">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <!-- Current Password -->
                 <div>
                     <label for="old_password" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Password</label>

@@ -19,7 +19,7 @@ func (u *documentUsecase) SetHidden(ctx context.Context, id string, hidden bool)
 
 	// We check the role from the context
 	userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
-	if userRole != "" && userRole != "admin" {
+	if userRole != "admin" {
 		return nil, errors.New("only administrators can hide or unhide articles")
 	}
 

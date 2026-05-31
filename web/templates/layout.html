@@ -24,8 +24,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/main.css?v=1.1.0">
+    <meta name="csrf-token" content="{{.CSRFToken}}">
 </head>
-<body class="bg-[#f1f5f9] text-[#202122] min-h-screen flex flex-col overflow-x-hidden" data-user-role="{{.SessionUserRole}}">
+<body class="bg-[#f1f5f9] text-[#202122] min-h-screen flex flex-col overflow-x-hidden" data-user-role="{{.SessionUserRole}}" hx-headers='{"X-CSRF-Token": "{{.CSRFToken}}"}'>
     <script>!function(){var b=document.body,t=localStorage.getItem("axia-theme")||"light",s=localStorage.getItem("axia-text-size")||"md",w=localStorage.getItem("axia-content-width")||"standard";b.classList.add("text-size-"+s,"content-width-"+w);"auto"===t?(b.classList.add("theme-auto"),b.classList.add(window.matchMedia("(prefers-color-scheme: dark)").matches?"theme-dark":"theme-light")):b.classList.add("theme-"+t)}();</script>
     <!-- Toast notification container -->
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 max-w-xs w-full select-none pointer-events-none"></div>
