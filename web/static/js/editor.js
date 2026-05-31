@@ -1,4 +1,39 @@
+window.formatMarkdown = function(prefix, suffix) {
+    const textarea = document.getElementById('content');
+    if (!textarea) return;
+
+    textarea.focus();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+
+    // Use execCommand to preserve undo/redo history (Ctrl+Z / Ctrl+Y)
+    const replacement = prefix + selectedText + suffix;
+    document.execCommand('insertText', false, replacement);
+
+    // Place cursor after inserted text (before suffix)
+    const newCursorPos = start + prefix.length + selectedText.length;
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+};
+
 (function() {
+    // Hotkeys handler
+    const textarea = document.getElementById('content');
+    if (textarea) {
+        textarea.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                window.formatMarkdown('**', '**');
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+                e.preventDefault();
+                window.formatMarkdown('*', '*');
+            }
+        });
+    }
+
     // AJAX Upload ảnh
     const imageUpload = document.getElementById('imageUpload');
     if (imageUpload) {
@@ -20,14 +55,12 @@
                 if(data.status === 'success') {
                     window.showToast("Image uploaded successfully.");
                     
-                    // Chèn markdown snippet vào textarea
+                    // Chèn markdown snippet vào textarea (dùng execCommand để giữ undo/redo)
                     const textarea = document.getElementById('content');
                     if (textarea) {
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        const text = textarea.value;
+                        textarea.focus();
                         const snippet = "\n" + data.data.markdown_snippet + "\n";
-                        textarea.value = text.substring(0, start) + snippet + text.substring(end);
+                        document.execCommand('insertText', false, snippet);
                         
                         // Cập nhật lại chiều cao của khung soạn thảo
                         if (typeof autoExpand === 'function') {
@@ -120,15 +153,22 @@
         titleInput.addEventListener('blur', handleRename);
     }
 
-    // Sync subtitle input with hidden form field
+    // Sync subtitle input with hidden form field + auto-expand height
     const subtitleInput = document.getElementById('document-subtitle-input');
     if (subtitleInput) {
+        const autoExpandSubtitle = () => {
+            subtitleInput.style.height = 'auto';
+            subtitleInput.style.height = subtitleInput.scrollHeight + 'px';
+        };
         subtitleInput.addEventListener('input', () => {
             const hiddenSubtitle = document.getElementById('subtitle-hidden-input');
             if (hiddenSubtitle) {
                 hiddenSubtitle.value = subtitleInput.value;
             }
+            autoExpandSubtitle();
         });
+        // Auto-expand on page load
+        autoExpandSubtitle();
     }
 
     // --- 2. Advanced Tag Pool System ---

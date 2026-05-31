@@ -14,11 +14,11 @@
                    class="text-3xl font-extrabold font-serif text-gray-900 leading-tight tracking-tight border-b border-transparent hover:border-slate-200 focus:border-blue-500 focus:outline-none focus:ring-0 bg-transparent w-full transition duration-150 py-1"
                    placeholder="Enter document title...">
         </div>
-        <div class="flex items-center gap-2 mt-1">
-            <span class="text-xs font-semibold text-slate-400 select-none uppercase tracking-wider shrink-0">Description:</span>
-            <input type="text" id="document-subtitle-input" value="{{.Subtitle}}"
-                   class="text-sm font-sans text-gray-600 border-b border-transparent hover:border-slate-200 focus:border-blue-500 focus:outline-none focus:ring-0 bg-transparent w-full transition duration-150 py-0.5"
-                   placeholder="Enter subtitle / short description...">
+        <div class="flex items-start gap-2 mt-1.5 w-full">
+            <span class="text-xs font-semibold text-slate-400 select-none uppercase tracking-wider shrink-0 mt-1">Description:</span>
+            <textarea id="document-subtitle-input" rows="1"
+                      class="text-sm font-sans text-gray-600 border-b border-transparent hover:border-slate-200 focus:border-blue-500 focus:outline-none focus:ring-0 bg-transparent w-full transition duration-150 py-0.5 resize-none overflow-hidden"
+                      placeholder="Enter subtitle / short description...">{{.Subtitle}}</textarea>
         </div>
         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-sans mt-2">
             <span class="flex items-center gap-1 font-medium">✏️ Editor</span>
@@ -101,8 +101,21 @@
 
     <div>
         <!-- Sticky editor toolbar (focus mode) -->
-        <div id="editor-sticky-toolbar" class="flex justify-between items-center mb-2 bg-slate-50 border border-slate-200 rounded-lg p-2 font-sans transition-all duration-150">
-            <span class="font-semibold text-gray-700 text-sm pl-1 select-none" id="editor-box-label">Article content (Markdown)</span>
+        <div id="editor-sticky-toolbar" class="flex flex-wrap justify-between items-center gap-3 mb-2 bg-slate-50 border border-slate-200 rounded-lg p-2 font-sans transition-all duration-150">
+            <!-- Left Side: Label and Quick formatting buttons -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-semibold text-gray-700 text-xs pl-1 pr-2 select-none uppercase tracking-wider hidden sm:inline" id="editor-box-label">Markdown</span>
+                
+                <button type="button" onclick="formatMarkdown('**', '**')" class="px-2.5 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-bold text-slate-800 transition shadow-sm" title="Bold text (Ctrl+B)">B</button>
+                <button type="button" onclick="formatMarkdown('*', '*')" class="px-2.5 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs italic font-bold text-slate-800 transition shadow-sm" title="Italic text (Ctrl+I)">I</button>
+                <button type="button" onclick="formatMarkdown('## ', '')" class="px-2 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-extrabold text-slate-800 transition shadow-sm" title="Heading 2 (H2)">H2</button>
+                <button type="button" onclick="formatMarkdown('### ', '')" class="px-2 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-extrabold text-slate-800 transition shadow-sm" title="Heading 3 (H3)">H3</button>
+                <button type="button" onclick="formatMarkdown('- ', '')" class="px-2 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-bold text-slate-800 transition shadow-sm" title="Bullet List">List</button>
+                <button type="button" onclick="formatMarkdown('1. ', '')" class="px-2 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-bold text-slate-800 transition shadow-sm" title="Numbered List">Num</button>
+                <button type="button" onclick="formatMarkdown('> ', '')" class="px-2.5 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-bold text-slate-800 transition shadow-sm" title="Blockquote">“</button>
+                <button type="button" onclick="formatMarkdown('[', '](https://)')" class="px-2 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-semibold text-blue-600 transition shadow-sm" title="Insert link">Link</button>
+                <button type="button" onclick="formatMarkdown('\n| Column 1 | Column 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |\n', '')" class="px-2 py-1 bg-white hover:bg-slate-105 border border-slate-300 hover:border-slate-400 rounded text-xs font-bold text-slate-800 transition shadow-sm" title="Insert table">Table</button>
+            </div>
             
             <div class="flex items-center gap-2">
                 <input type="file" id="imageUpload" accept="image/png, image/jpeg" class="hidden">
@@ -155,5 +168,5 @@
     </div>
 </div>
 
-<script src="/static/js/editor.js?v=1.0.2" defer></script>
+<script src="/static/js/editor.js?v=1.0.3" defer></script>
 {{end}}

@@ -21,9 +21,9 @@
 </script>
 {{end}}
 
-<div class="flex flex-col lg:flex-row gap-8 items-start relative">
+<div class="flex flex-col gap-8 items-start relative">
     <!-- Left Column: Article Body & Header -->
-    <div class="flex-1 min-w-0 w-full {{if and (not .DoesNotExist) .HTMLContent}}lg:max-w-[calc(100%-272px)]{{end}}">
+    <div class="flex-1 min-w-0 w-full">
         <!-- Article Header & Actions -->
         <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6 select-none border-b border-gray-100 pb-5">
             <div>
@@ -109,21 +109,6 @@
         </div>
         {{end}}
 
-        <!-- Mobile Table of Contents (collapsible, hidden on lg screens) -->
-        {{if and (not .DoesNotExist) .HTMLContent}}
-        <div id="mobile-toc-container" class="hidden mb-6 bg-slate-50/50 border border-slate-200/80 rounded-xl p-4 font-sans select-none">
-            <button onclick="toggleMobileToc()" class="w-full flex items-center justify-between font-bold text-xs uppercase tracking-wider text-slate-500 focus:outline-none">
-                <span class="flex items-center gap-2">📋 <span>Table of Contents</span></span>
-                <span id="mobile-toc-toggle-icon" class="transition-transform duration-200 text-[10px]">▼</span>
-            </button>
-            <div id="mobile-toc-content" class="hidden mt-3 pt-3 border-t border-slate-200/60">
-                <ul id="mobile-toc-list" class="space-y-2 text-xs font-medium pl-1">
-                    <!-- Mobile TOC links -->
-                </ul>
-            </div>
-        </div>
-        {{end}}
-
         <!-- Semantic Main article content -->
         <article class="wiki-content prose prose-slate max-w-none text-slate-800 leading-relaxed text-[16.5px] space-y-5 font-sans">
             {{if .DoesNotExist}}
@@ -147,17 +132,5 @@
             <span>Page maintained by the Axia version control system.</span>
         </div>
     </div>
-
-    <!-- Desktop Table of Contents Sidebar (sticky on scroll, hidden on <lg screens) -->
-    {{if and (not .DoesNotExist) .HTMLContent}}
-    <aside id="article-toc-container" class="hidden lg:block w-60 shrink-0 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 select-none border-l border-gray-200/60 pl-5">
-        <nav aria-label="Table of contents" class="space-y-3 font-sans">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Contents</h4>
-            <ul id="article-toc" class="space-y-2.5 text-[13px] font-medium text-slate-500">
-                <!-- Desktop TOC links -->
-            </ul>
-        </nav>
-    </aside>
-    {{end}}
 </div>
 {{end}}

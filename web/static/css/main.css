@@ -1,11 +1,11 @@
 body {
             font-family: 'Inter', sans-serif;
         }
+        h1, h2, h3, h4, h5, h6, .font-serif {
+            font-family: 'Lora', serif !important;
+        }
         .wiki-content {
             font-family: 'Inter', sans-serif;
-        }
-        .wiki-content h1, .wiki-content h2, .wiki-content h3, .wiki-content h4, .wiki-content h5, .wiki-content h6 {
-            font-family: 'Playfair Display', serif;
         }
         /* Custom scrollbar for sidebar */
         #wiki-sidebar::-webkit-scrollbar {
