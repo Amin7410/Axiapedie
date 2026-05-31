@@ -157,8 +157,10 @@ window.formatMarkdown = function(prefix, suffix) {
     const subtitleInput = document.getElementById('document-subtitle-input');
     if (subtitleInput) {
         const autoExpandSubtitle = () => {
+            const scrollPos = window.scrollY;
             subtitleInput.style.height = 'auto';
             subtitleInput.style.height = subtitleInput.scrollHeight + 'px';
+            window.scrollTo(window.scrollX, scrollPos);
         };
         subtitleInput.addEventListener('input', () => {
             const hiddenSubtitle = document.getElementById('subtitle-hidden-input');
@@ -365,8 +367,10 @@ window.formatMarkdown = function(prefix, suffix) {
     const textarea = document.getElementById('content');
     if (textarea) {
         const autoExpand = () => {
+            const scrollPos = window.scrollY;
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
+            window.scrollTo(window.scrollX, scrollPos);
         };
         textarea.addEventListener('input', autoExpand);
         // Trigger on load

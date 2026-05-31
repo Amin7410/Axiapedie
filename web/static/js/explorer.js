@@ -190,9 +190,14 @@ function clearActiveSelection() {
 
 // Lắng nghe sự kiện đổi trang của HTMX để di chuyển "mục sách" (active cursor) theo
 document.addEventListener("htmx:afterSwap", function(e) {
-    if (e.detail.target.id === "wiki-content") {
+    if (e.detail.target && e.detail.target.id === "wiki-content") {
         highlightActivePath(getCurrentActiveTitle());
     }
+});
+
+// Lắng nghe cả sự kiện khôi phục lịch sử của HTMX (Back/Forward) để đồng bộ cây thư mục
+document.addEventListener("htmx:historyRestore", function(e) {
+    highlightActivePath(getCurrentActiveTitle());
 });
 
 // Lấy tiêu đề tài liệu hiện tại từ URL

@@ -92,47 +92,56 @@ document.addEventListener("DOMContentLoaded", function() {
         window.loadExplorerTree();
     }
     
+    function restoreLayout() {
+        // Bảo toàn các class settings (theme, text-size, content-width)
+        var settingsClasses = [];
+        document.body.classList.forEach(function(c) {
+            if (c.startsWith('text-size-') || c.startsWith('content-width-') || c.startsWith('theme-')) {
+                settingsClasses.push(c);
+            }
+        });
+        document.body.className = "bg-[#f1f5f9] text-[#202122] min-h-screen flex flex-col overflow-x-hidden";
+        settingsClasses.forEach(function(c) { document.body.classList.add(c); });
+        
+        // Khôi phục layout nguyên bản trước khi nạp trang mới hoặc khi phục hồi history
+        const sidebarEl = document.getElementById("wiki-sidebar");
+        const resizerEl = document.getElementById("sidebar-resizer");
+        const header = document.querySelector('header');
+        const mainWrapper = document.querySelector('main');
+        
+        const isCollapsedVal = localStorage.getItem("sidebar-collapsed") === "true";
+        const savedWidthVal = parseInt(localStorage.getItem("sidebar-width")) || 256;
+        
+        if (sidebarEl) {
+            if (isCollapsedVal) {
+                sidebarEl.style.display = 'none';
+            } else {
+                sidebarEl.style.display = 'flex';
+                sidebarEl.style.width = savedWidthVal + "px";
+            }
+        }
+        if (resizerEl) {
+            resizerEl.style.display = isCollapsedVal ? 'none' : 'block';
+        }
+        if (header) header.style.display = 'flex';
+        // Tôn trọng cài đặt chiều rộng nội dung
+        var isWide = document.body.classList.contains('content-width-wide');
+        if (mainWrapper) {
+            mainWrapper.className = 'flex-grow p-8 w-full mx-auto';
+            mainWrapper.style.maxWidth = isWide ? '1600px' : '1350px';
+        }
+    }
+
     // Xóa sạch chế độ Focus khi chuyển trang qua HTMX
     document.body.addEventListener('htmx:beforeOnLoad', function(evt) {
         if (evt.detail.target && evt.detail.target.id === 'wiki-content') {
-            // Bảo toàn các class settings (theme, text-size, content-width)
-            var settingsClasses = [];
-            document.body.classList.forEach(function(c) {
-                if (c.startsWith('text-size-') || c.startsWith('content-width-') || c.startsWith('theme-')) {
-                    settingsClasses.push(c);
-                }
-            });
-            document.body.className = "bg-[#f1f5f9] text-[#202122] min-h-screen flex flex-col overflow-x-hidden";
-            settingsClasses.forEach(function(c) { document.body.classList.add(c); });
-            
-            // Khôi phục layout nguyên bản trước khi nạp trang mới
-            const sidebarEl = document.getElementById("wiki-sidebar");
-            const resizerEl = document.getElementById("sidebar-resizer");
-            const header = document.querySelector('header');
-            const mainWrapper = document.querySelector('main');
-            
-            const isCollapsedVal = localStorage.getItem("sidebar-collapsed") === "true";
-            const savedWidthVal = parseInt(localStorage.getItem("sidebar-width")) || 256;
-            
-            if (sidebarEl) {
-                if (isCollapsedVal) {
-                    sidebarEl.style.display = 'none';
-                } else {
-                    sidebarEl.style.display = 'flex';
-                    sidebarEl.style.width = savedWidthVal + "px";
-                }
-            }
-            if (resizerEl) {
-                resizerEl.style.display = isCollapsedVal ? 'none' : 'block';
-            }
-            if (header) header.style.display = 'flex';
-            // Tôn trọng cài đặt chiều rộng nội dung
-            var isWide = document.body.classList.contains('content-width-wide');
-            if (mainWrapper) {
-                mainWrapper.className = 'flex-grow p-8 w-full mx-auto';
-                mainWrapper.style.maxWidth = isWide ? '1600px' : '1350px';
-            }
+            restoreLayout();
         }
+    });
+
+    // Khôi phục layout nguyên bản khi điều hướng Back/Forward (HTMX history restore)
+    document.addEventListener('htmx:historyRestore', function(evt) {
+        restoreLayout();
     });
 
     // --- Back to Top Floating Button Logic ---
