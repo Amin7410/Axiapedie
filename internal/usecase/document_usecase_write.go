@@ -133,7 +133,8 @@ func (u *documentUsecase) SaveDraft(ctx context.Context, title, subtitle, conten
 
 	// Update document pointers
 	doc.LatestRevisionID = &newRevID
-	doc.ReviewStatus = "draft"
+	doc.PublishedRevisionID = &newRevID
+	doc.ReviewStatus = "published"
 	doc.Subtitle = subtitle
 	if err := u.docRepo.Update(ctx, doc); err != nil {
 		return nil, err
@@ -194,6 +195,9 @@ func (u *documentUsecase) Rename(ctx context.Context, id string, newTitle string
 	}
 
 	userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
+	if (strings.ToLower(doc.Title) == "home" || strings.ToLower(newTitle) == "home") && userRole != "admin" {
+		return nil, errors.New("only administrators can modify the Home page title")
+	}
 	if doc.IsLocked && userRole != "admin" {
 		return nil, errors.New("this article is locked; only administrators can rename it")
 	}

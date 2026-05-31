@@ -39,10 +39,42 @@ func (u *documentUsecase) Search(ctx context.Context, query string) ([]*domain.D
 		safeQuery = `"` + textQuery + `*"`
 	}
 
-	return u.docRepo.SearchWithTags(ctx, safeQuery, tags)
+	docs, err := u.docRepo.SearchWithTags(ctx, safeQuery, tags)
+	if err != nil {
+		return nil, err
+	}
+
+	userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
+	if userRole == "admin" {
+		return docs, nil
+	}
+
+	var filtered []*domain.Document
+	for _, d := range docs {
+		if !d.IsHidden {
+			filtered = append(filtered, d)
+		}
+	}
+	return filtered, nil
 }
 
 // GetAll returns all documents.
 func (u *documentUsecase) GetAll(ctx context.Context) ([]*domain.Document, error) {
-	return u.docRepo.GetAll(ctx)
+	docs, err := u.docRepo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
+	if userRole == "admin" {
+		return docs, nil
+	}
+
+	var filtered []*domain.Document
+	for _, d := range docs {
+		if !d.IsHidden {
+			filtered = append(filtered, d)
+		}
+	}
+	return filtered, nil
 }

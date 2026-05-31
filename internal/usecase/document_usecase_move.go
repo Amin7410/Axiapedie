@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"axia-wiki/internal/domain"
@@ -19,6 +20,9 @@ func (u *documentUsecase) Move(ctx context.Context, id string, parentID *string,
 	}
 
 	userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
+	if strings.ToLower(doc.Title) == "home" && userRole != "admin" {
+		return nil, errors.New("only administrators can move the Home page")
+	}
 	if doc.IsLocked && userRole != "admin" {
 		return nil, errors.New("this item is locked and cannot be moved")
 	}

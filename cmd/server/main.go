@@ -41,17 +41,8 @@ func main() {
 	}
 	// Add subtitle column if it does not exist (for compatibility with older DB files)
 	_, _ = database.Exec("ALTER TABLE documents ADD COLUMN subtitle TEXT DEFAULT '';")
+	_, _ = database.Exec("ALTER TABLE documents ADD COLUMN is_hidden INTEGER DEFAULT 0;")
 	log.Println("Database initialized successfully.")
-
-	// Seed tài khoản admin mặc định
-	if err := db.SeedDefaultAdmin(database); err != nil {
-		log.Printf("Warning: Failed to seed admin user: %v", err)
-	}
-
-	// Seed tài khoản test (writer, reader) để kiểm tra phân quyền
-	if err := db.SeedTestAccounts(database); err != nil {
-		log.Printf("Warning: Failed to seed test accounts: %v", err)
-	}
 
 	// Seed thư mục Unsorted Bin
 	if err := db.SeedUnsortedBin(database); err != nil {
@@ -120,8 +111,26 @@ func main() {
 	fs := http.FileServer(http.Dir("./web/static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 	mux.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./web/static/robots.txt")
+		scheme := "https"
+		if r.TLS == nil {
+			if fwd := r.Header.Get("X-Forwarded-Proto"); fwd != "" {
+				scheme = fwd
+			} else {
+				scheme = "http"
+			}
+		}
+		baseURL := scheme + "://" + r.Host
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Write([]byte("User-agent: *\nAllow: /\n\n"))
+		w.Write([]byte("User-agent: GPTBot\nAllow: /\n\n"))
+		w.Write([]byte("User-agent: Google-Extended\nAllow: /\n\n"))
+		w.Write([]byte("User-agent: Googlebot\nAllow: /\n\n"))
+		w.Write([]byte("User-agent: ChatGPT-User\nAllow: /\n\n"))
+		w.Write([]byte("User-agent: Bingbot\nAllow: /\n\n"))
+		w.Write([]byte("User-agent: ClaudeBot\nAllow: /\n\n"))
+		w.Write([]byte("Sitemap: " + baseURL + "/sitemap.xml\n"))
 	})
+	mux.HandleFunc("/sitemap.xml", docHandler.Sitemap)
 
 	// Tĩnh hóa thư mục uploads để truy cập ảnh
 	uploadsFs := http.FileServer(http.Dir("./uploads"))
@@ -188,6 +197,7 @@ func main() {
 	mux.HandleFunc("/api/v1/explorer/rename", middleware.CasbinAuthzMiddleware(enforcer, explorerAPIHandler.RenameNode))
 	mux.HandleFunc("/api/v1/explorer/delete", middleware.CasbinAuthzMiddleware(enforcer, explorerAPIHandler.DeleteNode))
 	mux.HandleFunc("/api/v1/explorer/lock", middleware.CasbinAuthzMiddleware(enforcer, explorerAPIHandler.LockNode))
+	mux.HandleFunc("/api/v1/explorer/hide", middleware.CasbinAuthzMiddleware(enforcer, explorerAPIHandler.HideNode))
 	mux.HandleFunc("/api/v1/explorer/report", middleware.CasbinAuthzMiddleware(enforcer, explorerAPIHandler.ReportNode))
 	mux.HandleFunc("/api/v1/explorer/move", middleware.CasbinAuthzMiddleware(enforcer, explorerAPIHandler.MoveNode))
 	mux.HandleFunc("/api/v1/tags", middleware.CasbinAuthzMiddleware(enforcer, tagAPIHandler.HandleTags))

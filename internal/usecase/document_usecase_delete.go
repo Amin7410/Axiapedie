@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"axia-wiki/internal/domain"
 )
@@ -18,6 +19,9 @@ func (u *documentUsecase) Delete(ctx context.Context, id string) error {
 	}
 
 	userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
+	if strings.ToLower(doc.Title) == "home" && userRole != "admin" {
+		return errors.New("only administrators can delete the Home page")
+	}
 	if doc.IsLocked && userRole != "admin" {
 		return errors.New("this article is locked; only administrators can delete it")
 	}

@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS documents (
     subtitle TEXT DEFAULT '',
     is_folder INTEGER NOT NULL DEFAULT 0, -- 0: file, 1: folder
     is_locked INTEGER NOT NULL DEFAULT 0,  -- 0: unlocked, 1: locked
+    is_hidden INTEGER NOT NULL DEFAULT 0,  -- 0: visible, 1: hidden
     published_revision_id TEXT, -- Bản đang Live (hiển thị cho Reader)
     latest_revision_id TEXT,    -- Bản Nháp mới nhất (hiển thị cho Writer/Admin)
     review_status TEXT DEFAULT 'draft', -- 'draft', 'pending_review', 'published'

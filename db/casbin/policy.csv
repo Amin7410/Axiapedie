@@ -2,6 +2,8 @@ p, reader, /wiki/*, read
 p, writer, /wiki/*, read
 p, writer, /editor/*, read
 p, writer, /editor/*, write
+p, admin, /admin/*, read
+p, admin, /admin/*, write
 
 g, guest, reader
 g, admin, writer

@@ -37,6 +37,14 @@ func (u *documentUsecase) GetDocument(ctx context.Context, title string) (*domai
 		return nil, "", ErrNotFound
 	}
 
+	// Hạn chế truy cập tài liệu bị ẩn đối với non-admin
+	if doc.IsHidden {
+		userRole, _ := ctx.Value(domain.ContextUserRoleKey).(string)
+		if userRole != "admin" {
+			return nil, "", ErrNotFound
+		}
+	}
+
 	// For standard users, we should read PublishedRevisionID.
 	// For writers, LatestRevisionID. We'll default to Published for this base method.
 	targetRevID := doc.PublishedRevisionID
@@ -70,60 +78,9 @@ func (u *documentUsecase) GetDocument(ctx context.Context, title string) (*domai
 }
 
 // reconstructContent tái dựng nội dung đầy đủ cho một revision cũ bằng Backward Delta.
-// Thuật toán: Đi ngược từ revision cần xem → về bản latest (full text),
+// Thuật toán: Đi ngược từ bản latest (full text) về revision cần xem,
 // thu thập tất cả backward patches dọc đường, rồi áp dụng chúng lần lượt.
 func (u *documentUsecase) reconstructContent(ctx context.Context, revID string) (string, error) {
-	// Thu thập chuỗi revisions từ revID đến bản full text gần nhất
-	var patches []string // Stack các backward patches cần áp dụng
-	currentID := revID
-
-	for {
-		rev, content, err := u.docRepo.GetRevision(ctx, currentID)
-		if err != nil {
-			return "", err
-		}
-		if rev == nil || content == nil {
-			return "", ErrNotFound
-		}
-
-		if content.ContentType == "full" {
-			// Đã tìm thấy bản full text gốc
-			fullText := string(content.Data)
-
-			// Áp dụng các backward patches theo thứ tự ngược (từ bản mới → bản cũ)
-			for i := len(patches) - 1; i >= 0; i-- {
-				fullText, err = delta.ApplyPatch(fullText, patches[i])
-				if err != nil {
-					return "", err
-				}
-			}
-			return fullText, nil
-		}
-
-		// Đây là bản delta, giải nén và lưu vào stack
-		patchText, err := delta.DecompressGzip(content.Data)
-		if err != nil {
-			return "", err
-		}
-		patches = append(patches, patchText)
-
-		// Đi tiếp về bản cha (bản cũ hơn nữa) — thực chất là tìm revision kế tiếp (mới hơn)
-		// Trong Backward Delta, bản cha (ParentID) chỉ về bản cũ hơn.
-		// Nhưng bản full nằm ở bản MỚI nhất. Ta cần đi theo hướng ngược lại.
-		// => Truy vấn: tìm revision nào có parent_id = currentID (tức revision con, mới hơn)
-		if rev.ParentID == nil {
-			// Đã đến revision gốc mà vẫn chưa thấy full — fallback
-			return string(content.Data), nil
-		}
-		break
-	}
-
-	// Chiến lược đúng cho Backward Delta:
-	// 1. Lấy document chứa revision này
-	// 2. Bắt đầu từ LatestRevisionID (full text)
-	// 3. Đi ngược theo parent_id chain cho tới khi gặp revID
-	// 4. Thu thập backward patches và áp dụng
-
 	// Lấy revision đầu tiên để biết document_id
 	firstRev, _, err := u.docRepo.GetRevision(ctx, revID)
 	if err != nil || firstRev == nil {
@@ -136,8 +93,8 @@ func (u *documentUsecase) reconstructContent(ctx context.Context, revID string) 
 	}
 
 	// Bắt đầu từ bản latest (full text), đi ngược theo parent_id chain
-	patches = nil
-	currentID = *doc.LatestRevisionID
+	var patches []string
+	currentID := *doc.LatestRevisionID
 
 	for currentID != revID {
 		rev, content, err := u.docRepo.GetRevision(ctx, currentID)

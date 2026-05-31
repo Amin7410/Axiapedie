@@ -23,12 +23,13 @@ func NewDocumentRepository(db *sql.DB) domain.DocumentRepository {
 
 func (r *documentRepository) GetByID(ctx context.Context, id string) (*domain.Document, error) {
 	doc := &domain.Document{}
-	query := `SELECT id, title, subtitle, parent_id, is_folder, is_locked, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at FROM documents WHERE id = ?`
+	query := `SELECT id, title, subtitle, parent_id, is_folder, is_locked, is_hidden, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at FROM documents WHERE id = ?`
 	
 	var isFolderInt int
 	var isLockedInt int
+	var isHiddenInt int
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&doc.ID, &doc.Title, &doc.Subtitle, &doc.ParentID, &isFolderInt, &isLockedInt, &doc.PublishedRevisionID, &doc.LatestRevisionID, &doc.ReviewStatus, &doc.SortOrder, &doc.CreatedAt, &doc.UpdatedAt,
+		&doc.ID, &doc.Title, &doc.Subtitle, &doc.ParentID, &isFolderInt, &isLockedInt, &isHiddenInt, &doc.PublishedRevisionID, &doc.LatestRevisionID, &doc.ReviewStatus, &doc.SortOrder, &doc.CreatedAt, &doc.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -38,17 +39,19 @@ func (r *documentRepository) GetByID(ctx context.Context, id string) (*domain.Do
 	}
 	doc.IsFolder = isFolderInt != 0
 	doc.IsLocked = isLockedInt != 0
+	doc.IsHidden = isHiddenInt != 0
 	return doc, nil
 }
 
 func (r *documentRepository) GetByTitle(ctx context.Context, title string) (*domain.Document, error) {
 	doc := &domain.Document{}
-	query := `SELECT id, title, subtitle, parent_id, is_folder, is_locked, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at FROM documents WHERE title = ?`
+	query := `SELECT id, title, subtitle, parent_id, is_folder, is_locked, is_hidden, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at FROM documents WHERE title = ?`
 	
 	var isFolderInt int
 	var isLockedInt int
+	var isHiddenInt int
 	err := r.db.QueryRowContext(ctx, query, title).Scan(
-		&doc.ID, &doc.Title, &doc.Subtitle, &doc.ParentID, &isFolderInt, &isLockedInt, &doc.PublishedRevisionID, &doc.LatestRevisionID, &doc.ReviewStatus, &doc.SortOrder, &doc.CreatedAt, &doc.UpdatedAt,
+		&doc.ID, &doc.Title, &doc.Subtitle, &doc.ParentID, &isFolderInt, &isLockedInt, &isHiddenInt, &doc.PublishedRevisionID, &doc.LatestRevisionID, &doc.ReviewStatus, &doc.SortOrder, &doc.CreatedAt, &doc.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -58,12 +61,13 @@ func (r *documentRepository) GetByTitle(ctx context.Context, title string) (*dom
 	}
 	doc.IsFolder = isFolderInt != 0
 	doc.IsLocked = isLockedInt != 0
+	doc.IsHidden = isHiddenInt != 0
 	return doc, nil
 }
 
 func (r *documentRepository) Create(ctx context.Context, doc *domain.Document) error {
-	query := `INSERT INTO documents (id, title, subtitle, parent_id, is_folder, is_locked, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO documents (id, title, subtitle, parent_id, is_folder, is_locked, is_hidden, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	
 	isFolderInt := 0
 	if doc.IsFolder {
@@ -73,13 +77,17 @@ func (r *documentRepository) Create(ctx context.Context, doc *domain.Document) e
 	if doc.IsLocked {
 		isLockedInt = 1
 	}
-	_, err := r.db.ExecContext(ctx, query, doc.ID, doc.Title, doc.Subtitle, doc.ParentID, isFolderInt, isLockedInt, doc.PublishedRevisionID, doc.LatestRevisionID, doc.ReviewStatus, doc.SortOrder, doc.CreatedAt, doc.UpdatedAt)
+	isHiddenInt := 0
+	if doc.IsHidden {
+		isHiddenInt = 1
+	}
+	_, err := r.db.ExecContext(ctx, query, doc.ID, doc.Title, doc.Subtitle, doc.ParentID, isFolderInt, isLockedInt, isHiddenInt, doc.PublishedRevisionID, doc.LatestRevisionID, doc.ReviewStatus, doc.SortOrder, doc.CreatedAt, doc.UpdatedAt)
 	return err
 }
 
 func (r *documentRepository) Update(ctx context.Context, doc *domain.Document) error {
 	query := `UPDATE documents 
-	          SET title = ?, subtitle = ?, parent_id = ?, is_folder = ?, is_locked = ?, published_revision_id = ?, latest_revision_id = ?, review_status = ?, sort_order = ?, updated_at = ? 
+	          SET title = ?, subtitle = ?, parent_id = ?, is_folder = ?, is_locked = ?, is_hidden = ?, published_revision_id = ?, latest_revision_id = ?, review_status = ?, sort_order = ?, updated_at = ? 
 	          WHERE id = ?`
 	
 	isFolderInt := 0
@@ -90,13 +98,17 @@ func (r *documentRepository) Update(ctx context.Context, doc *domain.Document) e
 	if doc.IsLocked {
 		isLockedInt = 1
 	}
+	isHiddenInt := 0
+	if doc.IsHidden {
+		isHiddenInt = 1
+	}
 	doc.UpdatedAt = time.Now()
-	_, err := r.db.ExecContext(ctx, query, doc.Title, doc.Subtitle, doc.ParentID, isFolderInt, isLockedInt, doc.PublishedRevisionID, doc.LatestRevisionID, doc.ReviewStatus, doc.SortOrder, doc.UpdatedAt, doc.ID)
+	_, err := r.db.ExecContext(ctx, query, doc.Title, doc.Subtitle, doc.ParentID, isFolderInt, isLockedInt, isHiddenInt, doc.PublishedRevisionID, doc.LatestRevisionID, doc.ReviewStatus, doc.SortOrder, doc.UpdatedAt, doc.ID)
 	return err
 }
 
 func (r *documentRepository) GetAll(ctx context.Context) ([]*domain.Document, error) {
-	query := `SELECT id, title, subtitle, parent_id, is_folder, is_locked, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at FROM documents ORDER BY is_folder DESC, sort_order ASC, title ASC`
+	query := `SELECT id, title, subtitle, parent_id, is_folder, is_locked, is_hidden, published_revision_id, latest_revision_id, review_status, sort_order, created_at, updated_at FROM documents ORDER BY is_folder DESC, sort_order ASC, title ASC`
 	
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -109,14 +121,16 @@ func (r *documentRepository) GetAll(ctx context.Context) ([]*domain.Document, er
 		doc := &domain.Document{}
 		var isFolderInt int
 		var isLockedInt int
+		var isHiddenInt int
 		err := rows.Scan(
-			&doc.ID, &doc.Title, &doc.Subtitle, &doc.ParentID, &isFolderInt, &isLockedInt, &doc.PublishedRevisionID, &doc.LatestRevisionID, &doc.ReviewStatus, &doc.SortOrder, &doc.CreatedAt, &doc.UpdatedAt,
+			&doc.ID, &doc.Title, &doc.Subtitle, &doc.ParentID, &isFolderInt, &isLockedInt, &isHiddenInt, &doc.PublishedRevisionID, &doc.LatestRevisionID, &doc.ReviewStatus, &doc.SortOrder, &doc.CreatedAt, &doc.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
 		doc.IsFolder = isFolderInt != 0
 		doc.IsLocked = isLockedInt != 0
+		doc.IsHidden = isHiddenInt != 0
 		docs = append(docs, doc)
 	}
 	return docs, nil

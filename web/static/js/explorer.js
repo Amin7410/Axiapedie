@@ -398,6 +398,14 @@ function renderTreeNodes(nodes, parentEl, depth, parentNodeId) {
                 leftEl.appendChild(lockIcon);
             }
 
+            // Icon con mắt gạch chéo SVG (nếu bị ẩn)
+            if (node.is_hidden) {
+                const hideIcon = document.createElement("span");
+                hideIcon.innerHTML = '<svg class="w-3 h-3 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>';
+                hideIcon.className = "shrink-0 flex items-center";
+                leftEl.appendChild(hideIcon);
+            }
+
             // Tên thư mục
             const title = document.createElement("span");
             title.className = "font-medium truncate";
@@ -478,6 +486,14 @@ function renderTreeNodes(nodes, parentEl, depth, parentNodeId) {
                 lockIcon.innerHTML = '<svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
                 lockIcon.className = "shrink-0 flex items-center";
                 leftEl.appendChild(lockIcon);
+            }
+
+            // Icon con mắt gạch chéo SVG (nếu bị ẩn)
+            if (node.is_hidden) {
+                const hideIcon = document.createElement("span");
+                hideIcon.innerHTML = '<svg class="w-3 h-3 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>';
+                hideIcon.className = "shrink-0 flex items-center";
+                leftEl.appendChild(hideIcon);
             }
 
             // Liên kết bài viết
@@ -624,6 +640,8 @@ function showContextMenu(e, node) {
     const isUserAdmin = (document.body.getAttribute("data-user-role") || "") === "admin";
     const lockBtn = document.getElementById("ctx-lock");
     const unlockBtn = document.getElementById("ctx-unlock");
+    const hideBtn = document.getElementById("ctx-hide");
+    const unhideBtn = document.getElementById("ctx-unhide");
     const renameBtn = document.getElementById("ctx-rename");
     const deleteBtn = document.getElementById("ctx-delete");
     const reportBtn = document.getElementById("ctx-report");
@@ -649,20 +667,31 @@ function showContextMenu(e, node) {
         if (unlockBtn) {
             unlockBtn.querySelector("span:last-child").textContent = `Unlock ${count} selected`;
         }
+        if (hideBtn) {
+            hideBtn.querySelector("span:last-child").textContent = `Hide ${count} selected`;
+        }
+        if (unhideBtn) {
+            unhideBtn.querySelector("span:last-child").textContent = `Unhide ${count} selected`;
+        }
         if (reportBtn) {
             reportBtn.querySelector("span:last-child").textContent = `Report ${count} selected`;
         }
 
         if (isUserAdmin) {
-            lockBtn.classList.remove("hidden");
-            unlockBtn.classList.remove("hidden");
+            if (lockBtn) lockBtn.classList.remove("hidden");
+            if (unlockBtn) unlockBtn.classList.remove("hidden");
+            if (hideBtn) hideBtn.classList.remove("hidden");
+            if (unhideBtn) unhideBtn.classList.remove("hidden");
         } else {
-            lockBtn.classList.add("hidden");
-            unlockBtn.classList.add("hidden");
+            if (lockBtn) lockBtn.classList.add("hidden");
+            if (unlockBtn) unlockBtn.classList.add("hidden");
+            if (hideBtn) hideBtn.classList.add("hidden");
+            if (unhideBtn) unhideBtn.classList.add("hidden");
         }
     } else {
         // Single action mode
         const isNodeLocked = node.is_locked;
+        const isNodeHidden = node.is_hidden;
 
         if (renameBtn) {
             renameBtn.querySelector("span:last-child").textContent = "Rename";
@@ -686,21 +715,37 @@ function showContextMenu(e, node) {
         if (unlockBtn) {
             unlockBtn.querySelector("span:last-child").textContent = "Unlock";
         }
+        if (hideBtn) {
+            hideBtn.querySelector("span:last-child").textContent = "Hide";
+        }
+        if (unhideBtn) {
+            unhideBtn.querySelector("span:last-child").textContent = "Unhide";
+        }
         if (reportBtn) {
             reportBtn.querySelector("span:last-child").textContent = "Report";
         }
 
         if (isUserAdmin) {
             if (isNodeLocked) {
-                lockBtn.classList.add("hidden");
-                unlockBtn.classList.remove("hidden");
+                if (lockBtn) lockBtn.classList.add("hidden");
+                if (unlockBtn) unlockBtn.classList.remove("hidden");
             } else {
-                lockBtn.classList.remove("hidden");
-                unlockBtn.classList.add("hidden");
+                if (lockBtn) lockBtn.classList.remove("hidden");
+                if (unlockBtn) unlockBtn.classList.add("hidden");
+            }
+
+            if (isNodeHidden) {
+                if (hideBtn) hideBtn.classList.add("hidden");
+                if (unhideBtn) unhideBtn.classList.remove("hidden");
+            } else {
+                if (hideBtn) hideBtn.classList.remove("hidden");
+                if (unhideBtn) unhideBtn.classList.add("hidden");
             }
         } else {
-            lockBtn.classList.add("hidden");
-            unlockBtn.classList.add("hidden");
+            if (lockBtn) lockBtn.classList.add("hidden");
+            if (unlockBtn) unlockBtn.classList.add("hidden");
+            if (hideBtn) hideBtn.classList.add("hidden");
+            if (unhideBtn) unhideBtn.classList.add("hidden");
         }
     }
 
@@ -798,6 +843,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const deleteBtn = document.getElementById("ctx-delete");
     const lockBtn = document.getElementById("ctx-lock");
     const unlockBtn = document.getElementById("ctx-unlock");
+    const hideBtn = document.getElementById("ctx-hide");
+    const unhideBtn = document.getElementById("ctx-unhide");
     const reportBtn = document.getElementById("ctx-report");
 
     if (renameBtn) {
@@ -900,6 +947,31 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (lockBtn) lockBtn.addEventListener("click", () => setLockStatus(true));
     if (unlockBtn) unlockBtn.addEventListener("click", () => setLockStatus(false));
+
+    function setHiddenStatus(hidden) {
+        if (selectedNodes.length === 0) return;
+        const ids = selectedNodes.map(n => n.id);
+
+        fetch('/api/v1/explorer/hide', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, hidden: hidden })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                clearMultiSelection();
+                loadExplorerTree();
+                window.location.reload();
+            } else {
+                window.showToast(data.message, "error");
+            }
+        })
+        .catch(() => window.showToast("Could not connect to the server.", "error"));
+    }
+
+    if (hideBtn) hideBtn.addEventListener("click", () => setHiddenStatus(true));
+    if (unhideBtn) unhideBtn.addEventListener("click", () => setHiddenStatus(false));
 
     if (reportBtn) {
         reportBtn.addEventListener("click", async function() {

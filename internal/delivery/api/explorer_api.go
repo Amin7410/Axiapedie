@@ -24,6 +24,7 @@ type ExplorerNode struct {
 	ParentID  *string         `json:"parent_id"`
 	IsFolder  bool            `json:"is_folder"`
 	IsLocked  bool            `json:"is_locked"`
+	IsHidden  bool            `json:"is_hidden"`
 	SortOrder int             `json:"sort_order"`
 	Children  []*ExplorerNode `json:"children"`
 }
@@ -57,6 +58,7 @@ func (h *ExplorerAPIHandler) GetTree(w http.ResponseWriter, r *http.Request) {
 			ParentID:  doc.ParentID,
 			IsFolder:  doc.IsFolder,
 			IsLocked:  doc.IsLocked,
+			IsHidden:  doc.IsHidden,
 			SortOrder: doc.SortOrder,
 			Children:  []*ExplorerNode{},
 		}
@@ -155,6 +157,12 @@ type LockNodeRequest struct {
 	ID     string   `json:"id"`
 	IDs    []string `json:"ids"`
 	Locked bool     `json:"locked"`
+}
+
+type HideNodeRequest struct {
+	ID     string   `json:"id"`
+	IDs    []string `json:"ids"`
+	Hidden bool     `json:"hidden"`
 }
 
 type ReportNodeRequest struct {
@@ -258,6 +266,40 @@ func (h *ExplorerAPIHandler) LockNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := h.docUsecase.BulkSetLock(r.Context(), ids, req.Locked)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(JSONResponse{Status: "error", Message: err.Error()})
+		return
+	}
+
+	json.NewEncoder(w).Encode(JSONResponse{
+		Status: "success",
+	})
+}
+
+// HideNode handles POST /api/v1/explorer/hide
+func (h *ExplorerAPIHandler) HideNode(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(JSONResponse{Status: "error", Message: "Method not allowed"})
+		return
+	}
+
+	var req HideNodeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(JSONResponse{Status: "error", Message: "Invalid request payload"})
+		return
+	}
+
+	ids := req.IDs
+	if len(ids) == 0 && req.ID != "" {
+		ids = []string{req.ID}
+	}
+
+	err := h.docUsecase.BulkSetHidden(r.Context(), ids, req.Hidden)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(JSONResponse{Status: "error", Message: err.Error()})

@@ -4,17 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{template "title" .}} - Axia Wiki</title>
+    <title>{{template "title" .}} - Axiapedia</title>
     {{if .Description}}
     <meta name="description" content="{{.Description}}">
     {{else}}
-    <meta name="description" content="Axia Wiki - A modern, high-performance personal wiki and knowledge management system.">
+    <meta name="description" content="Axiapedia - A modern, high-performance personal wiki and knowledge management system.">
     {{end}}
     <!-- Open Graph tags -->
-    <meta property="og:title" content="{{if .Title}}{{.Title}}{{else}}Axia Wiki{{end}}">
-    <meta property="og:description" content="{{if .Description}}{{.Description}}{{else}}Axia Wiki - A modern, high-performance personal wiki and knowledge management system.{{end}}">
+    <meta property="og:title" content="{{if .Title}}{{.Title}}{{else}}Axiapedia{{end}}">
+    <meta property="og:description" content="{{if .Description}}{{.Description}}{{else}}Axiapedia - A modern, high-performance personal wiki and knowledge management system.{{end}}">
     <meta property="og:type" content="article">
-    <meta property="og:site_name" content="Axia Wiki">
+    <meta property="og:site_name" content="Axiapedia">
+    {{if .Keywords}}<meta name="keywords" content="{{.Keywords}}">{{end}}
     
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,27 +23,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/main.css?v=1.0.6">
+    <link rel="stylesheet" href="/static/css/main.css?v=1.0.9">
 </head>
 <body class="bg-[#f1f5f9] text-[#202122] min-h-screen flex flex-col overflow-x-hidden" data-user-role="{{.SessionUserRole}}">
     <script>!function(){var b=document.body,t=localStorage.getItem("axia-theme")||"light",s=localStorage.getItem("axia-text-size")||"md",w=localStorage.getItem("axia-content-width")||"standard";b.classList.add("text-size-"+s,"content-width-"+w);"auto"===t?(b.classList.add("theme-auto"),b.classList.add(window.matchMedia("(prefers-color-scheme: dark)").matches?"theme-dark":"theme-light")):b.classList.add("theme-"+t)}();</script>
     <!-- Toast notification container -->
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 max-w-xs w-full select-none pointer-events-none"></div>
  
-    <script src="/static/js/dialogs.js?v=1.0.6" defer></script>
-    <script src="/static/js/sidebar.js?v=1.0.6" defer></script>
-    <script src="/static/js/explorer.js?v=1.0.6" defer></script>
-    <script src="/static/js/search.js?v=1.0.6" defer></script>
-    <script src="/static/js/settings.js?v=1.0.6" defer></script>
-    <script src="/static/js/toc.js?v=1.0.6" defer></script>
+    <script src="/static/js/dialogs.js?v=1.0.9" defer></script>
+    <script src="/static/js/sidebar.js?v=1.0.9" defer></script>
+    <script src="/static/js/explorer.js?v=1.0.9" defer></script>
+    <script src="/static/js/search.js?v=1.0.9" defer></script>
+    <script src="/static/js/settings.js?v=1.0.9" defer></script>
+    <script src="/static/js/toc.js?v=1.0.9" defer></script>
     
     <div class="flex flex-1 relative">
         <!-- LEFT SIDEBAR (Wikipedia Style, Scrollable) -->
         <aside id="wiki-sidebar" class="w-64 border-r border-[#cbd5e1] bg-[#f9fafb] flex flex-col p-6 space-y-6 select-none h-screen sticky top-0 shrink-0">
             <!-- Logo & Brand -->
             <a href="/wiki/Home" hx-get="/wiki/Home" hx-target="#wiki-content" hx-swap="innerHTML" hx-push-url="true" class="flex flex-col items-center pb-4 border-b border-gray-200 w-full hover:opacity-80 transition cursor-pointer select-none">
-                <span class="text-3xl font-extrabold text-blue-600 tracking-wider">AXIA</span>
-                <span class="text-xs uppercase tracking-widest text-gray-500 font-bold mt-1">Wiki System</span>
+                <span class="text-3xl font-extrabold text-blue-600 tracking-wider">AXIAPEDIA</span>
+                <span class="text-xs uppercase tracking-widest text-gray-500 font-bold mt-1">Knowledge System</span>
             </a>
 
             <!-- Documents Explorer (IDE Style) -->
@@ -215,6 +216,12 @@
         </button>
         <button id="ctx-unlock" class="w-full text-left px-4 py-2.5 hover:bg-emerald-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
             <span class="text-base">🔓</span> <span>Unlock</span>
+        </button>
+        <button id="ctx-hide" class="w-full text-left px-4 py-2.5 hover:bg-slate-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">👁️‍🗨️</span> <span>Hide</span>
+        </button>
+        <button id="ctx-unhide" class="w-full text-left px-4 py-2.5 hover:bg-teal-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
+            <span class="text-base">👁️</span> <span>Unhide</span>
         </button>
         <button id="ctx-report" class="w-full text-left px-4 py-2.5 hover:bg-rose-600 hover:text-white transition-colors duration-100 flex items-center gap-2">
             <span class="text-base">🚨</span> <span>Report</span>

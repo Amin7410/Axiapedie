@@ -59,11 +59,17 @@ func (u *authUsecase) Register(ctx context.Context, username, password string) (
 		return nil, err
 	}
 
+	users, err := u.userRepo.GetAll(ctx)
+	role := "reader"
+	if err == nil && len(users) == 0 {
+		role = "admin"
+	}
+
 	newUser := &domain.User{
 		ID:           uuid.New().String(),
 		Username:     username,
 		PasswordHash: string(passwordHash),
-		Role:         "reader", // Default role set to reader for security
+		Role:         role,
 	}
 
 	if err := u.userRepo.Create(ctx, newUser); err != nil {
@@ -145,11 +151,17 @@ func (u *authUsecase) LoginOrCreateWithGoogle(ctx context.Context, googleID, ema
 		}
 	}
 
+	users, err := u.userRepo.GetAll(ctx)
+	role := "reader"
+	if err == nil && len(users) == 0 {
+		role = "admin"
+	}
+
 	newUser := &domain.User{
 		ID:           uuid.New().String(),
 		Username:     username,
 		PasswordHash: "", // No local password
-		Role:         "reader", // Default role
+		Role:         role,
 		GoogleID:     googleID,
 	}
 

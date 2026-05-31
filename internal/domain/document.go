@@ -13,6 +13,7 @@ type Document struct {
 	ParentID            *string
 	IsFolder            bool
 	IsLocked            bool
+	IsHidden            bool
 	PublishedRevisionID *string
 	LatestRevisionID    *string
 	ReviewStatus        string // 'draft', 'pending_review', 'published'
@@ -68,7 +69,9 @@ type DocumentUsecase interface {
 	Delete(ctx context.Context, id string) error
 	Rename(ctx context.Context, id string, newTitle string) (*Document, error)
 	SetLock(ctx context.Context, id string, locked bool) (*Document, error)
+	SetHidden(ctx context.Context, id string, hidden bool) (*Document, error)
 	Move(ctx context.Context, id string, parentID *string, targetID *string, position string) (*Document, error)
 	BulkDelete(ctx context.Context, ids []string) error
 	BulkSetLock(ctx context.Context, ids []string, locked bool) error
+	BulkSetHidden(ctx context.Context, ids []string, hidden bool) error
 }

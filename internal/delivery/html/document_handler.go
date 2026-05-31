@@ -153,6 +153,11 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 			curr = parentDoc
 		}
 
+		// Add Position field for JSON-LD breadcrumbs schema
+		for i, bc := range breadcrumbs {
+			bc["Position"] = i + 2
+		}
+
 		// Make SEO description
 		if doc.Subtitle != "" {
 			description = doc.Subtitle
@@ -165,6 +170,7 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 		"Title":        title,
 		"HTMLContent":  template.HTML(htmlContent),
 		"IsLocked":     false,
+		"IsHidden":     false,
 		"IsBookmarked": false,
 		"DocID":        "",
 		"Subtitle":     "",
@@ -177,6 +183,7 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 		data["Content"] = content
 		data["Subtitle"] = doc.Subtitle
 		data["IsLocked"] = doc.IsLocked
+		data["IsHidden"] = doc.IsHidden
 		data["LatestRevisionID"] = ""
 		if doc.LatestRevisionID != nil {
 			data["LatestRevisionID"] = *doc.LatestRevisionID
@@ -184,6 +191,15 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 		// Lấy danh sách tag của document
 		tags, _ := h.tagUsecase.GetTagsByDocument(r.Context(), doc.ID)
 		data["Tags"] = tags
+
+		// AI/SEO: truyền ngày tạo, ngày cập nhật, và keywords vào template
+		data["CreatedAt"] = doc.CreatedAt.Format("2006-01-02")
+		data["UpdatedAt"] = doc.UpdatedAt.Format("2006-01-02")
+		var kwParts []string
+		for _, t := range tags {
+			kwParts = append(kwParts, t.Name)
+		}
+		data["Keywords"] = strings.Join(kwParts, ", ")
 
 		// Kiểm tra xem người dùng hiện tại có lưu bài này không
 		if userID := middleware.GetSessionUserID(r); userID != "" {
@@ -210,6 +226,15 @@ func (h *DocumentHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	if err != nil && err.Error() != "document not found" {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
+	}
+
+	// Chặn chỉnh sửa trang chủ (Home) đối với người dùng không phải admin
+	if strings.ToLower(title) == "home" {
+		userRole := middleware.GetSessionUserRole(r)
+		if userRole != "admin" {
+			http.Redirect(w, r, "/wiki/"+title, http.StatusSeeOther)
+			return
+		}
 	}
 
 	// Chặn mở editor cho trang bị khoá (nếu không phải admin)
@@ -277,6 +302,15 @@ func (h *DocumentHandler) Save(w http.ResponseWriter, r *http.Request) {
 	if authorID == "" {
 		w.Write([]byte("<script>showToast('Please sign in to save articles.', 'error');</script>"))
 		return
+	}
+
+	// Chặn lưu trang chủ (Home) đối với người dùng không phải admin
+	if strings.ToLower(title) == "home" {
+		userRole := middleware.GetSessionUserRole(r)
+		if userRole != "admin" {
+			w.Write([]byte("<script>showToast('Only administrators can edit the Home page.', 'error');</script>"))
+			return
+		}
 	}
 
 	tagsStr := r.FormValue("tags")
@@ -398,4 +432,49 @@ func makeDescription(markdown string) string {
 	}
 
 	return text
+}
+
+// Sitemap generates /sitemap.xml for AI crawlers and search engines
+func (h *DocumentHandler) Sitemap(w http.ResponseWriter, r *http.Request) {
+	docs, err := h.usecase.GetAll(r.Context())
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Get base URL from request
+	scheme := "https"
+	if r.TLS == nil {
+		if fwd := r.Header.Get("X-Forwarded-Proto"); fwd != "" {
+			scheme = fwd
+		} else {
+			scheme = "http"
+		}
+	}
+	baseURL := scheme + "://" + r.Host
+
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>` + "\n"))
+	w.Write([]byte(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n"))
+
+	// Home page
+	w.Write([]byte("  <url>\n"))
+	w.Write([]byte("    <loc>" + baseURL + "/wiki/Home</loc>\n"))
+	w.Write([]byte("    <changefreq>daily</changefreq>\n"))
+	w.Write([]byte("    <priority>1.0</priority>\n"))
+	w.Write([]byte("  </url>\n"))
+
+	for _, doc := range docs {
+		if doc.IsFolder || doc.Title == "Home" {
+			continue
+		}
+		w.Write([]byte("  <url>\n"))
+		w.Write([]byte("    <loc>" + baseURL + "/wiki/" + strings.ReplaceAll(doc.Title, " ", "%20") + "</loc>\n"))
+		w.Write([]byte("    <lastmod>" + doc.UpdatedAt.Format("2006-01-02") + "</lastmod>\n"))
+		w.Write([]byte("    <changefreq>weekly</changefreq>\n"))
+		w.Write([]byte("    <priority>0.8</priority>\n"))
+		w.Write([]byte("  </url>\n"))
+	}
+
+	w.Write([]byte("</urlset>\n"))
 }

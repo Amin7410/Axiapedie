@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS documents (
     subtitle TEXT DEFAULT '',
     is_folder INTEGER NOT NULL DEFAULT 0,
     is_locked INTEGER NOT NULL DEFAULT 0,
+    is_hidden INTEGER NOT NULL DEFAULT 0,
     published_revision_id TEXT,
     latest_revision_id TEXT,
     review_status TEXT DEFAULT 'draft',
