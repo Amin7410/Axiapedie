@@ -208,7 +208,6 @@ func (h *DocumentHandler) View(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		data["DoesNotExist"] = true
-		w.WriteHeader(http.StatusNotFound)
 	}
 
 	h.render(w, r, "view.html", data)

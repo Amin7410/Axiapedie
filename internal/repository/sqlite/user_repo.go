@@ -109,7 +109,50 @@ func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 }
 
 func (r *userRepository) Delete(ctx context.Context, id string) error {
-	query := `DELETE FROM users WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Ensure the system fallback user exists
+	_, err = tx.ExecContext(ctx, `
+		INSERT OR IGNORE INTO users (id, username, password_hash, role, created_at)
+		VALUES ('system-user', 'system_deleted_user', '', 'reader', CURRENT_TIMESTAMP)
+	`)
+	if err != nil {
+		return err
+	}
+
+	// 2. Reassign revisions authored by this user
+	_, err = tx.ExecContext(ctx, `UPDATE revisions SET author_id = 'system-user' WHERE author_id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	// 3. Reassign media uploaded by this user
+	_, err = tx.ExecContext(ctx, `UPDATE media SET uploaded_by = 'system-user' WHERE uploaded_by = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	// 4. Delete user bookmarks
+	_, err = tx.ExecContext(ctx, `DELETE FROM user_bookmarks WHERE user_id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	// 5. Delete audit logs related to this user
+	_, err = tx.ExecContext(ctx, `DELETE FROM audit_logs WHERE user_id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	// 6. Finally, delete the user
+	_, err = tx.ExecContext(ctx, `DELETE FROM users WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
