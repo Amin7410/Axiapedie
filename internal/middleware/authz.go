@@ -71,7 +71,7 @@ func CasbinAuthzMiddleware(enforcer *casbin.Enforcer, next http.HandlerFunc) htt
 		}
 
 		// Bypass cho trang chủ, tìm kiếm, file tĩnh và các tài nguyên public
-		if obj == "/" || obj == "/search" ||
+		if obj == "/" || obj == "/search" || obj == "/robots.txt" ||
 			strings.HasPrefix(obj, "/static/") ||
 			strings.HasPrefix(obj, "/uploads/") ||
 			strings.HasPrefix(obj, "/ui/") {

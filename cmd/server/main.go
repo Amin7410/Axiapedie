@@ -119,6 +119,9 @@ func main() {
 	// Phục vụ các file tĩnh (CSS, JS, Images)
 	fs := http.FileServer(http.Dir("./web/static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+	mux.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./web/static/robots.txt")
+	})
 
 	// Tĩnh hóa thư mục uploads để truy cập ảnh
 	uploadsFs := http.FileServer(http.Dir("./uploads"))
